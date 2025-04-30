@@ -23,7 +23,7 @@ body {
 }
 
 main {
-  background: url(./Assets/wmremove-transformed.jpeg);
+  background: url(/Frontend-UI/Assets/wmremove-transformed.jpeg);
   width: 80vw;
   height: 70vh;
   display: flex;

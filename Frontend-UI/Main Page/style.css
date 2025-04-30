@@ -1,0 +1,84 @@
+/* Fonts */
+@import url("https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400..700&display=swap");
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: gilroy;
+}
+html,
+body {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  background-color: black;
+  color: white;
+  width: 100%;
+}
+
+.navbar {
+  background-color: red;
+  width: 100vw;
+  height: 10vh;
+  padding: 0rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-family: Dancing Script;
+  font-size: 3rem;
+}
+
+input{
+    padding: .5rem 1rem;
+    border-radius: 25px;
+    border: none;
+}
+
+.side {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.side i {
+  font-size: 1.5em;
+  border-radius: 50%;
+  padding: 0.3rem;
+  background-color: #4f5151be;
+  cursor: pointer;
+}
+
+.prfImg {
+  border-radius: 50%;
+  width: 3vw;
+}
+
+main {
+  display: flex;
+  justify-content: space-between;
+}
+
+.left-side {
+  background-color: greenyellow;
+  width: 10%;
+  height: 90vh;
+  border: 2px solid white;
+}
+
+.feed {
+  background-color: peru;
+  width: 80%;
+  height: 90vh;
+}
+
+.right-side {
+  background-color: skyblue;
+  width: 10%;
+  height: 90vh;
+}
