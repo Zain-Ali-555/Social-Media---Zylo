@@ -20,7 +20,7 @@ body {
 }
 
 .navbar {
-  background-color: red;
+  background-color: rgb(35, 34, 34);
   width: 100vw;
   height: 10vh;
   padding: 0rem 1rem;
@@ -34,10 +34,10 @@ body {
   font-size: 3rem;
 }
 
-input{
-    padding: .5rem 1rem;
-    border-radius: 25px;
-    border: none;
+input {
+  padding: 0.5rem 1rem;
+  border-radius: 25px;
+  border: none;
 }
 
 .side {
@@ -65,20 +65,19 @@ main {
 }
 
 .left-side {
-  background-color: greenyellow;
-  width: 10%;
+  width: 20%;
   height: 90vh;
   border: 2px solid white;
 }
 
 .feed {
-  background-color: peru;
-  width: 80%;
+  width: 60%;
   height: 90vh;
+  border: 2px solid white;
 }
 
 .right-side {
-  background-color: skyblue;
-  width: 10%;
+  width: 20%;
   height: 90vh;
+  border: 2px solid white;
 }
