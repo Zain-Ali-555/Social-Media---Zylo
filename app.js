@@ -28,7 +28,7 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'social-media', // Optional folder in your Cloudinary account
-    allowed_formats: ['jpg', 'png', 'jpeg', 'gif', 'mp4', 'mov'], // Allowed file formats
+    allowed_formats: ['jpg', 'png', 'jpeg', 'gif', 'mp4', 'mov', 'webp'], // Allowed file formats
   },
 });
 
