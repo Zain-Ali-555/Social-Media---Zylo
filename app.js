@@ -1137,35 +1137,53 @@ app.post('/api/notifications/mark-read', (req, res) => {
 });
 
 // Profile picture upload route
-app.post('/profile/picture', isAuthenticated, upload.single('profilePicture'), async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ error: 'No file uploaded' });
+app.post('/profile/picture', isAuthenticated, (req, res) => {
+    upload.single('profilePicture')(req, res, async function (err) {
+        if (err instanceof multer.MulterError) {
+            // A Multer error occurred when uploading.
+            console.error('Multer error uploading profile picture:', err);
+            req.flash('error_msg', 'Error uploading file: ' + err.message);
+            return res.redirect('/profile'); // Redirect back to profile on Multer error
+        } else if (err) {
+            // An unknown error occurred when uploading.
+            console.error('Unknown error uploading profile picture:', err);
+            req.flash('error_msg', 'An unknown error occurred during file upload.');
+            return res.redirect('/profile'); // Redirect back to profile on other errors
         }
 
-        const filePath = req.file.path; // Cloudinary URL
+        // Everything went fine with upload, proceed with database update
+        try {
+            if (!req.file) {
+                req.flash('error_msg', 'No file uploaded.');
+                return res.redirect('/profile'); // Redirect if no file was provided
+            }
 
-        // Update user's profile picture in database
-        const [result] = await db.promise().query(
-            'UPDATE users SET profile_picture = ? WHERE id = ?',
-            [filePath, req.session.user.id]
-        );
+            const filePath = req.file.path; // Cloudinary URL
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'User not found' });
+            // Update user's profile picture in database
+            const [result] = await db.promise().query(
+                'UPDATE users SET profile_picture = ? WHERE id = ?',
+                [filePath, req.session.user.id]
+            );
+
+            if (result.affectedRows === 0) {
+                // This case should ideally not happen if isAuthenticated passes, but good for safety
+                console.error('User not found during profile picture update for user ID:', req.session.user.id);
+                req.flash('error_msg', 'Error updating profile: user not found.');
+                return res.redirect('/profile');
+            }
+
+            // Update the user object in the session with the new profile picture path
+            req.session.user.profile_picture = filePath;
+
+            req.flash('success_msg', 'Profile picture updated successfully!');
+            res.redirect('/profile'); // Redirect back to profile page after successful upload
+        } catch (error) {
+            console.error('Error updating profile picture in database:', error);
+            req.flash('error_msg', 'Failed to update profile picture in database.');
+            res.redirect('/profile'); // Redirect back to profile on DB error
         }
-
-        // Update the user object in the session with the new profile picture path
-        req.session.user.profile_picture = filePath;
-
-        // No need to delete old profile picture locally, Cloudinary handles management
-        // If you need to delete the old image from Cloudinary, you would use cloudinary.uploader.destroy() here
-
-        res.redirect('/profile'); // Redirect back to profile page after successful upload
-    } catch (error) {
-        console.error('Error uploading profile picture:', error);
-        res.status(500).json({ error: 'Failed to upload profile picture' });
-    }
+    });
 });
 
 // User search API endpoint
