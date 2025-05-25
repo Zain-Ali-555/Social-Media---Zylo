@@ -8,45 +8,35 @@ const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const expressLayouts = require('express-ejs-layouts');
 const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
-// Load environment variables if using a .env file
-// require('dotenv').config();
+// Load environment variables
+require('dotenv').config();
 
 const app = express();
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        const uploadDir = 'public/uploads/profile-pictures';
-        // Create directory if it doesn't exist
-        if (!fs.existsSync(uploadDir)){
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-        cb(null, uploadDir);
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'profile-' + req.session.user.id + '-' + uniqueSuffix + path.extname(file.originalname));
-    }
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-const upload = multer({
-    storage: storage,
-    limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB limit
-    },
-    fileFilter: function (req, file, cb) {
-        // Accept only image files
-        if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
-            return cb(new Error('Only image files are allowed!'), false);
-        }
-            cb(null, true);
-    }
+// Configure multer storage with Cloudinary
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'social-media', // Optional folder in your Cloudinary account
+    allowed_formats: ['jpg', 'png', 'jpeg', 'gif', 'mp4', 'mov'], // Allowed file formats
+  },
 });
 
-// Serve static files
+const upload = multer({ storage: storage });
+
+// Serve static files (excluding uploads)
 app.use(express.static('public'));
-app.use('/uploads', express.static('public/uploads'));
+// Removed: app.use('/uploads', express.static('public/uploads'));
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -58,7 +48,7 @@ app.set('layout', 'layout');
 
 // Session configuration
 app.use(session({
-    secret: 'your-secret-key',
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: true
 }));
@@ -76,220 +66,201 @@ app.use((req, res, next) => {
     next();
 });
 
-// Initial database connection (without database selected)
-const initialDb = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'zain'
-});
+// Database connection for the application and setup
+const db = mysql.createConnection(process.env.DATABASE_URL || process.env.MYSQL_URL);
 
-// Create database and tables
-initialDb.connect((err) => {
+db.connect((err) => {
     if (err) {
-        console.error('Error connecting to MySQL:', err);
+        console.error('Error connecting to database:', err);
         return;
     }
-    
-    // Create database
-    initialDb.query('CREATE DATABASE IF NOT EXISTS social_media', (err) => {
+    console.log('Connected to MySQL database');
+
+    // Create database and tables - Only run migrations/schema creation once
+    // You might want to handle schema creation/migrations separately in production
+    db.query(`
+        CREATE TABLE IF NOT EXISTS users (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            username VARCHAR(50) UNIQUE NOT NULL,
+            email VARCHAR(100) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            theme_id INT DEFAULT 1,
+            profile_picture VARCHAR(255),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    `, (err) => {
         if (err) {
-            console.error('Error creating database:', err);
+            console.error('Error creating users table:', err);
             return;
         }
-        console.log('Database created or already exists');
-        
-        // Switch to the database
-        initialDb.query('USE social_media', (err) => {
+        console.log('Users table created or already exists');
+
+        // Create themes table
+        db.query(`
+            CREATE TABLE IF NOT EXISTS themes (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                name VARCHAR(50) NOT NULL,
+                primary_color VARCHAR(20) NOT NULL,
+                secondary_color VARCHAR(20) NOT NULL,
+                text_color VARCHAR(20) NOT NULL,
+                accent_color VARCHAR(20) NOT NULL,
+                border_color VARCHAR(20) NOT NULL,
+                background_color VARCHAR(20) NOT NULL
+            )
+        `, (err) => {
             if (err) {
-                console.error('Error switching to database:', err);
-                                    return;
-                                }
-                                
-                                // Create users table
-                                initialDb.query(`
-                                    CREATE TABLE IF NOT EXISTS users (
+                console.error('Error creating themes table:', err);
+                return;
+            }
+            console.log('Themes table created or already exists');
+
+            // Create posts table
+            db.query(`
+                CREATE TABLE IF NOT EXISTS posts (
                     id INT PRIMARY KEY AUTO_INCREMENT,
-                    username VARCHAR(50) UNIQUE NOT NULL,
-                    email VARCHAR(100) UNIQUE NOT NULL,
-                                        password VARCHAR(255) NOT NULL,
-                                        theme_id INT DEFAULT 1,
-                                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                                    )
-                                `, (err) => {
-                                    if (err) {
-                                        console.error('Error creating users table:', err);
-                                        return;
-                                    }
-                                    console.log('Users table created or already exists');
-                                    
-                // Create themes table
-                                    initialDb.query(`
-                    CREATE TABLE IF NOT EXISTS themes (
-                        id INT PRIMARY KEY AUTO_INCREMENT,
-                        name VARCHAR(50) NOT NULL,
-                        primary_color VARCHAR(20) NOT NULL,
-                        secondary_color VARCHAR(20) NOT NULL,
-                        text_color VARCHAR(20) NOT NULL,
-                        accent_color VARCHAR(20) NOT NULL,
-                        border_color VARCHAR(20) NOT NULL,
-                        background_color VARCHAR(20) NOT NULL
+                    user_id INT NOT NULL,
+                    content TEXT NOT NULL,
+                    media_url VARCHAR(255),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            `, (err) => {
+                if (err) {
+                    console.error('Error creating posts table:', err);
+                    return;
+                }
+                console.log('Posts table created or already exists');
+
+                // Create media table
+                db.query(`
+                    CREATE TABLE IF NOT EXISTS media (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        user_id INT NOT NULL,
+                        post_id INT NOT NULL,
+                        media_type ENUM('image', 'video') NOT NULL,
+                        media_url VARCHAR(255) NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                        FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
                     )
                 `, (err) => {
                     if (err) {
-                        console.error('Error creating themes table:', err);
+                        console.error('Error creating media table:', err);
                         return;
                     }
-                    console.log('Themes table created or already exists');
-                    
-                    // Create posts table
-                    initialDb.query(`
-                        CREATE TABLE IF NOT EXISTS posts (
+                    console.log('Media table created or already exists');
+
+                    // Create notifications table
+                    db.query(`
+                        CREATE TABLE IF NOT EXISTS notifications (
                             id INT PRIMARY KEY AUTO_INCREMENT,
-                                            user_id INT NOT NULL,
-                                            content TEXT NOT NULL,
-                                            media_url VARCHAR(255),
-                                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-                                        )
-                                    `, (err) => {
-                                        if (err) {
-                                            console.error('Error creating posts table:', err);
-                                            return;
-                                        }
-                                        console.log('Posts table created or already exists');
-                                        
-                        // Create media table
-                                        initialDb.query(`
-                            CREATE TABLE IF NOT EXISTS media (
-                                                id INT AUTO_INCREMENT PRIMARY KEY,
-                                                user_id INT NOT NULL,
+                            user_id INT NOT NULL,
+                            acting_user_id INT NOT NULL,
+                            post_id INT,
+                            type VARCHAR(50) NOT NULL,
+                            message TEXT NOT NULL,
+                            is_read BOOLEAN DEFAULT FALSE,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                            FOREIGN KEY (acting_user_id) REFERENCES users(id) ON DELETE CASCADE,
+                            FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+                        )
+                    `, (err) => {
+                        if (err) {
+                            console.error('Error creating notifications table:', err);
+                            return;
+                        }
+                        console.log('Notifications table created or already exists');
+
+                        // Create likes table
+                        db.query(`
+                            CREATE TABLE IF NOT EXISTS likes (
+                                id INT PRIMARY KEY AUTO_INCREMENT,
+                                user_id INT NOT NULL,
                                 post_id INT NOT NULL,
-                                media_type ENUM('image', 'video') NOT NULL,
-                                media_url VARCHAR(255) NOT NULL,
                                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                                FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+                                FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+                                UNIQUE KEY unique_like (user_id, post_id)
                             )
                         `, (err) => {
                             if (err) {
-                                console.error('Error creating media table:', err);
+                                console.error('Error creating likes table:', err);
                                 return;
                             }
-                            console.log('Media table created or already exists');
-                            
-                            // Create notifications table
-                            initialDb.query(`
-                                CREATE TABLE IF NOT EXISTS notifications (
+                            console.log('Likes table created or already exists');
+
+                            // Create comments table
+                            db.query(`
+                                CREATE TABLE IF NOT EXISTS comments (
                                     id INT PRIMARY KEY AUTO_INCREMENT,
                                     user_id INT NOT NULL,
-                                    acting_user_id INT NOT NULL,
-                                                post_id INT,
-                                    type VARCHAR(50) NOT NULL,
-                                    message TEXT NOT NULL,
-                                    is_read BOOLEAN DEFAULT FALSE,
-                                                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                                    FOREIGN KEY (acting_user_id) REFERENCES users(id) ON DELETE CASCADE,
-                                                FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
-                                            )
+                                    post_id INT NOT NULL,
+                                    content TEXT NOT NULL,
+                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                                    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+                                )
+                            `, (err) => {
+                                if (err) {
+                                    console.error('Error creating comments table:', err);
+                                    return;
+                                }
+                                console.log('Comments table created or already exists');
+
+                                // Create saved_posts table
+                                db.query(`
+                                    CREATE TABLE IF NOT EXISTS saved_posts (
+                                        id INT PRIMARY KEY AUTO_INCREMENT,
+                                        user_id INT NOT NULL,
+                                        post_id INT NOT NULL,
+                                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                                        FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+                                        UNIQUE KEY unique_save (user_id, post_id)
+                                    )
+                                `, (err) => {
+                                    if (err) {
+                                        console.error('Error creating saved_posts table:', err);
+                                        return;
+                                    }
+                                    console.log('Saved posts table created or already exists');
+
+                                    // Create followers table
+                                    db.query(`
+                                        CREATE TABLE IF NOT EXISTS followers (
+                                            id INT PRIMARY KEY AUTO_INCREMENT,
+                                            follower_id INT NOT NULL,
+                                            following_id INT NOT NULL,
+                                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                            FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
+                                            FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE,
+                                            UNIQUE KEY unique_follow (follower_id, following_id)
+                                        )
+                                    `, (err) => {
+                                        if (err) {
+                                            console.error('Error creating followers table:', err);
+                                            return;
+                                        }
+                                        console.log('Followers table created or already exists');
+
+                                        // Insert default themes
+                                        db.query(`
+                                            INSERT IGNORE INTO themes (name, primary_color, secondary_color, text_color, accent_color, border_color, background_color)
+                                            VALUES
+                                            ('light', '#007bff', '#6c757d', '#333', '#28a745', '#dee2e6', '#fff'),
+                                            ('dark', '#0d6efd', '#adb5bd', '#f8f9fa', '#198754', '#495057', '#212529')
                                         `, (err) => {
                                             if (err) {
-                                                console.error('Error creating notifications table:', err);
+                                                console.error('Error inserting default themes:', err);
                                                 return;
                                             }
-                                            console.log('Notifications table created or already exists');
-                                            
-                                            // Create likes table
-                                            initialDb.query(`
-                                    CREATE TABLE IF NOT EXISTS likes (
-                                        id INT PRIMARY KEY AUTO_INCREMENT,
-                                                    user_id INT NOT NULL,
-                                                    post_id INT NOT NULL,
-                                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                                                    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
-                                                    UNIQUE KEY unique_like (user_id, post_id)
-                                                )
-                                            `, (err) => {
-                                                if (err) {
-                                                    console.error('Error creating likes table:', err);
-                                                    return;
-                                                }
-                                                console.log('Likes table created or already exists');
-                                                
-                                                // Create comments table
-                                                initialDb.query(`
-                                        CREATE TABLE IF NOT EXISTS comments (
-                                            id INT PRIMARY KEY AUTO_INCREMENT,
-                                                        user_id INT NOT NULL,
-                                                        post_id INT NOT NULL,
-                                                        content TEXT NOT NULL,
-                                                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                                                        FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
-                                                    )
-                                                `, (err) => {
-                                                    if (err) {
-                                                        console.error('Error creating comments table:', err);
-                                                        return;
-                                                    }
-                                                    console.log('Comments table created or already exists');
-                                                    
-                                                    // Create saved_posts table
-                                                    initialDb.query(`
-                                            CREATE TABLE IF NOT EXISTS saved_posts (
-                                                id INT PRIMARY KEY AUTO_INCREMENT,
-                                                            user_id INT NOT NULL,
-                                                            post_id INT NOT NULL,
-                                                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                                                            FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
-                                                            UNIQUE KEY unique_save (user_id, post_id)
-                                                        )
-                                                    `, (err) => {
-                                                        if (err) {
-                                                            console.error('Error creating saved_posts table:', err);
-                                                            return;
-                                                        }
-                                                        console.log('Saved posts table created or already exists');
-                                            
-                                            // Create followers table
-                                            initialDb.query(`
-                                                CREATE TABLE IF NOT EXISTS followers (
-                                                    id INT PRIMARY KEY AUTO_INCREMENT,
-                                                    follower_id INT NOT NULL,
-                                                    following_id INT NOT NULL,
-                                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                    FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
-                                                    FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE,
-                                                    UNIQUE KEY unique_follow (follower_id, following_id)
-                                                )
-                                            `, (err) => {
-                                                if (err) {
-                                                    console.error('Error creating followers table:', err);
-                                                    return;
-                                                }
-                                                console.log('Followers table created or already exists');
-                                                
-                                                // Insert default themes
-                                                initialDb.query(`
-                                                    INSERT IGNORE INTO themes (name, primary_color, secondary_color, text_color, accent_color, border_color, background_color)
-                                                    VALUES 
-                                                    ('light', '#007bff', '#6c757d', '#333', '#28a745', '#dee2e6', '#fff'),
-                                                    ('dark', '#0d6efd', '#adb5bd', '#f8f9fa', '#198754', '#495057', '#212529')
-                                                `, (err) => {
-                                                    if (err) {
-                                                        console.error('Error inserting default themes:', err);
-                                                        return;
-                                                    }
-                                                    console.log('Default themes inserted or already exist');
-                                                        
-                                                        // Start the server after database initialization is complete
-                                                        const PORT = process.env.PORT || 3002;
-                                                        app.listen(PORT, () => {
-                                                            console.log(`Server is running on port ${PORT}`);
-                                                    });
-                                                });
+                                            console.log('Default themes inserted or already exist');
+
+                                            // Start the server after database initialization is complete
+                                            const PORT = process.env.PORT || 3002;
+                                            app.listen(PORT, () => {
+                                                console.log(`Server is running on port ${PORT}`);
                                             });
                                         });
                                     });
@@ -301,22 +272,6 @@ initialDb.connect((err) => {
             });
         });
     });
-});
-
-// Database connection for the application
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'zain',
-    database: 'social_media'
-});
-
-db.connect((err) => {
-    if (err) {
-        console.error('Error connecting to database:', err);
-        return;
-    }
-    console.log('Connected to MySQL database');
 });
 
 // Authentication middleware
@@ -485,7 +440,7 @@ app.post('/post/create', upload.single('media'), (req, res) => {
     
     // Insert the post first
     const insertPostQuery = `
-        INSERT INTO posts (user_id, content, created_at)
+        INSERT INTO posts (user_id, content, created_at) 
         VALUES (?, ?, NOW())
     `;
 
@@ -499,21 +454,21 @@ app.post('/post/create', upload.single('media'), (req, res) => {
 
         // If there's a file, insert into the media table
         if (req.file) {
-            const mediaUrl = `/uploads/${req.file.filename}`;
-            const mediaType = req.file.mimetype.startsWith('video/') ? 'video' : 'image';
+            const mediaUrl = req.file.path; // Cloudinary URL
+            const mediaType = req.file.resource_type === 'video' ? 'video' : 'image';
 
             const insertMediaQuery = `
                 INSERT INTO media (user_id, post_id, media_type, media_url, created_at)
-        VALUES (?, ?, ?, ?, NOW())
-    `;
+                VALUES (?, ?, ?, ?, NOW())
+            `;
 
             db.query(insertMediaQuery, [userId, postId, mediaType, mediaUrl], (err) => {
-        if (err) {
+                if (err) {
                     console.error('Error inserting media:', err);
                     // Decide how to handle media insertion failure - currently logs error but post is still created
-        }
+                }
                 // Redirect after both post and media (if any) are processed
-        res.redirect('/dashboard');
+                res.redirect('/dashboard');
             });
         } else {
             // If no file, just redirect after post is created
@@ -1188,7 +1143,7 @@ app.post('/profile/picture', isAuthenticated, upload.single('profilePicture'), a
             return res.status(400).json({ error: 'No file uploaded' });
         }
 
-        const filePath = '/uploads/profile-pictures/' + req.file.filename;
+        const filePath = req.file.path; // Cloudinary URL
 
         // Update user's profile picture in database
         const [result] = await db.promise().query(
@@ -1203,14 +1158,8 @@ app.post('/profile/picture', isAuthenticated, upload.single('profilePicture'), a
         // Update the user object in the session with the new profile picture path
         req.session.user.profile_picture = filePath;
 
-        // Delete old profile picture if it exists
-        const [user] = await db.promise().query('SELECT profile_picture FROM users WHERE id = ?', [req.session.user.id]);
-        if (user[0].profile_picture && user[0].profile_picture !== filePath) {
-            const oldPath = path.join(__dirname, 'public', user[0].profile_picture);
-            if (fs.existsSync(oldPath)) {
-                fs.unlinkSync(oldPath);
-            }
-        }
+        // No need to delete old profile picture locally, Cloudinary handles management
+        // If you need to delete the old image from Cloudinary, you would use cloudinary.uploader.destroy() here
 
         res.redirect('/profile'); // Redirect back to profile page after successful upload
     } catch (error) {
