@@ -279,7 +279,11 @@ const isAuthenticated = (req, res, next) => {
     if (req.session.user) {
         next();
     } else {
-        res.status(401).json({ error: 'Not authenticated' });
+        if (req.xhr || req.headers.accept.includes('application/json')) {
+            res.status(401).json({ error: 'Not authenticated' });
+        } else {
+            res.redirect('/login');
+        }
     }
 };
 
@@ -945,11 +949,7 @@ app.get('/commented', (req, res) => {
 });
 
 // Activity page route
-app.get('/activity', (req, res) => {
-    if (!req.session.user) {
-        return res.redirect('/login');
-    }
-
+app.get('/activity', isAuthenticated, (req, res) => {
     const userId = req.session.user.id;
     const baseQuery = `
         SELECT p.*, u.username,
