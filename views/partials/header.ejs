@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .navbar-glass {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 2rem;
+            background: linear-gradient(to right, #1a1a1b, #2d2d2f);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .nav-brand-glass {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            text-decoration: none;
+            transition: transform 0.3s ease;
+        }
+
+        .nav-brand-glass:hover {
+            transform: translateY(-1px);
+        }
+
+        .logo-img {
+            height: 2.5rem;
+            width: 2.5rem;
+            border-radius: 12px;
+            background: linear-gradient(45deg, #0079d3, #00a8ff);
+            box-shadow: 0 4px 15px rgba(0,121,211,0.3);
+            object-fit: cover;
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+
+        .logo-img:hover {
+            transform: scale(1.05);
+        }
+
+        .brand-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, #ffffff, #e0e0e0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-search-glass {
+            flex: 1;
+            max-width: 600px;
+            margin: 0 2rem;
+            position: relative;
+        }
+
+        #navbar-search {
+            width: 100%;
+            padding: 0.8rem 1.5rem;
+            border-radius: 30px;
+            border: 2px solid rgba(255,255,255,0.1);
+            font-size: 1rem;
+            background: rgba(39,39,41,0.8);
+            color: #ffffff;
+            outline: none;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        #navbar-search::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+
+        #navbar-search:focus {
+            border-color: #0079d3;
+            background: rgba(39,39,41,0.95);
+            box-shadow: 0 0 15px rgba(0,121,211,0.2);
+        }
+
+        .nav-links-glass {
+            display: flex;
+            gap: 1.2rem;
+            align-items: center;
+        }
+
+        .nav-link-glass {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            font-size: 1.1rem;
+            padding: 0.6rem 1rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            position: relative;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .nav-link-glass i {
+            font-size: 1.3rem;
+            transition: transform 0.3s ease;
+        }
+
+        .nav-link-glass:hover {
+            background: rgba(255,255,255,0.1);
+            color: #ffffff;
+            transform: translateY(-2px);
+        }
+
+        .nav-link-glass:hover i {
+            transform: scale(1.1);
+        }
+
+        .nav-link-glass.active {
+            background: linear-gradient(45deg, #0079d3, #00a8ff);
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(0,121,211,0.3);
+        }
+
+        .theme-toggle-glass {
+            background: rgba(255,255,255,0.05);
+            border: none;
+            color: rgba(255,255,255,0.8);
+            cursor: pointer;
+            padding: 0.6rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-size: 1.3rem;
+        }
+
+        .theme-toggle-glass:hover {
+            background: rgba(255,255,255,0.1);
+            color: #ffffff;
+            transform: translateY(-2px);
+        }
+
+        .nav-bell-glass {
+            background: rgba(255,255,255,0.05);
+            border: none;
+            color: rgba(255,255,255,0.8);
+            font-size: 1.3rem;
+            position: relative;
+            cursor: pointer;
+            border-radius: 12px;
+            padding: 0.6rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-bell-glass:hover {
+            background: rgba(255,255,255,0.1);
+            color: #ffffff;
+            transform: translateY(-2px);
+        }
+
+        .notif-dot {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            background: #ff4500;
+            border-radius: 50%;
+            border: 2px solid #1a1a1b;
+            display: inline-block;
+            box-shadow: 0 0 10px rgba(255,69,0,0.5);
+        }
+
+        .notif-dropdown-glass {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 120%;
+            min-width: 320px;
+            background: rgba(39,39,41,0.95);
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+            z-index: 2000;
+            padding: 1rem 0;
+            animation: fadeIn 0.3s ease;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .notif-dropdown-glass.active { 
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .notif-title {
+            font-weight: 700;
+            color: #ffffff;
+            padding: 0.8rem 1.5rem;
+            font-size: 1.1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .notif-list { 
+            max-height: 300px; 
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.2) transparent;
+        }
+
+        .notif-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .notif-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .notif-list::-webkit-scrollbar-thumb {
+            background-color: rgba(255,255,255,0.2);
+            border-radius: 3px;
+        }
+
+        .notif-item {
+            padding: 0.8rem 1.5rem;
+            color: rgba(255,255,255,0.8);
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .notif-item:hover {
+            background: rgba(255,255,255,0.05);
+            color: #ffffff;
+        }
+
+        .notif-item i { 
+            color: #0079d3;
+            font-size: 1.2rem;
+        }
+
+        .user-dropdown-glass {
+            position: relative;
+            margin: 0 0.8rem;
+        }
+
+        .profile-avatar-glass {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 12px;
+            background: linear-gradient(45deg, #0079d3, #00a8ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 1.3rem;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            padding: 0;
+            box-shadow: 0 4px 15px rgba(0,121,211,0.3);
+        }
+
+        .profile-avatar-glass:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 20px rgba(0,121,211,0.4);
+        }
+
+        .profile-avatar-glass img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .profile-avatar-glass:hover img {
+            transform: scale(1.1);
+        }
+
+        .user-dropdown-menu-glass {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 110%; /* Position right below */
+            background: #272729; /* Dark background */
+            border-radius: 4px; /* Slightly rounded */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 2000;
+            min-width: 180px;
+            padding: 0.5rem 0;
+            animation: fadeIn 0.18s;
+        }
+
+        .user-dropdown-menu-glass a, .user-dropdown-menu-glass button {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            color: #d7dadc; /* Lighter gray color */
+            text-decoration: none;
+            padding: 0.7rem 1rem; /* Adjusted padding */
+            border: none;
+            background: none;
+            width: 100%;
+            font-size: 0.9rem; /* Adjusted font size */
+            border-radius: 0; /* Straight corners */
+            transition: background 0.15s, color 0.15s;
+            cursor: pointer;
+        }
+
+        .user-dropdown-menu-glass a:hover, .user-dropdown-menu-glass button:hover {
+            background: #343536; /* Darker background on hover */
+            color: #ffffff; /* White color on hover */
+        }
+
+        .user-dropdown-menu-glass .dropdown-theme-toggle {
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            color: #d7dadc; /* Lighter gray color */
+        }
+
+        .user-dropdown-menu-glass .dropdown-theme-toggle:hover {
+             background: #343536; /* Darker background on hover */
+             color: #ffffff; /* White color on hover */
+        }
+
+        .user-dropdown-menu-glass.active { display: block; }
+
+        .hamburger-glass {
+            display: none;
+            background: none;
+            border: none;
+            color: #d7dadc; /* Lighter gray color */
+            font-size: 1.5rem; /* Adjusted font size */
+            margin-left: 0.5rem; /* Adjusted margin */
+            cursor: pointer;
+            border-radius: 4px; /* Slightly rounded */
+            padding: 0.4rem; /* Adjusted padding */
+            transition: background 0.18s, color 0.18s;
+        }
+
+        .hamburger-glass:hover { background: #343536; color: #ffffff; } /* Darker hover */
+
+        @media (max-width: 900px) {
+            .nav-search-glass { max-width: 400px; }
+        }
+
+        @media (max-width: 700px) {
+            .navbar-glass { flex-direction: row; align-items: center; padding: 0.5rem 1vw; max-width: 98vw; }
+            .nav-links-glass { flex-direction: row; flex-wrap: nowrap; gap: 0.5rem; margin-top: 0; width: auto;  }
+            .nav-search-glass { display: flex; flex: 1; margin: 0 0.5rem; max-width: none; }
+            .brand-title { font-size: 1.1rem; }
+            .nav-link-glass { font-size: 0.95rem; padding: 0.3rem 0.5rem; }
+            .profile-avatar-glass { width: 1.8rem; height: 1.8rem; font-size: 1rem; }
+            .hamburger-glass { display: none; /* Hide hamburger for this layout */ }
+
+            /* Adjust dropdown positioning for smaller screens */
+            .notif-dropdown-glass,
+            .user-dropdown-menu-glass {
+                right: auto; /* Remove right alignment */
+                left: 0;    /* Align to the left */
+                min-width: 200px; /* Optionally reduce min-width */
+            }
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Styles for the Create Post Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.active {
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: linear-gradient(145deg, #2a2a2c, #1f1f21);
+            margin: auto;
+            padding: 2rem;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            color: #ffffff;
+            position: relative;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-content h2 {
+            color: #ffffff;
+            margin: 0 0 1.5rem 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #ffffff, #e0e0e0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 0.5px;
+        }
+
+        .modal-content .close-btn {
+            color: rgba(255,255,255,0.7);
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            font-size: 1.8rem;
+            font-weight: 300;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .modal-content .close-btn:hover {
+            color: #ffffff;
+            background: rgba(255,255,255,0.1);
+            transform: rotate(90deg);
+        }
+
+        .modal-content form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .modal-content form label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
+            font-size: 1.1rem;
+        }
+
+        .modal-content form textarea {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 12px;
+            border: 2px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: #ffffff;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 120px;
+            transition: all 0.3s ease;
+        }
+
+        .modal-content form textarea:focus {
+            border-color: #0079d3;
+            background: rgba(255,255,255,0.08);
+            outline: none;
+            box-shadow: 0 0 15px rgba(0,121,211,0.2);
+        }
+
+        .modal-content form textarea::placeholder {
+            color: rgba(255,255,255,0.4);
+        }
+
+        .file-upload-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .modal-content form input[type="file"] {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 12px;
+            border: 2px dashed rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.7);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-content form input[type="file"]:hover {
+            border-color: #0079d3;
+            background: rgba(255,255,255,0.08);
+        }
+
+        .modal-content form input[type="file"]::file-selector-button {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: none;
+            background: #0079d3;
+            color: white;
+            cursor: pointer;
+            margin-right: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .modal-content form input[type="file"]::file-selector-button:hover {
+            background: #005fa3;
+        }
+
+        .modal-content form button[type="submit"] {
+            background: linear-gradient(45deg, #0079d3, #00a8ff);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(0,121,211,0.3);
+        }
+
+        .modal-content form button[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,121,211,0.4);
+        }
+
+        .modal-content form button[type="submit"]:active {
+            transform: translateY(0);
+        }
+
+        /* Preview container for uploaded media */
+        .media-preview {
+            display: none;
+            margin-top: 1rem;
+            border-radius: 12px;
+            overflow: hidden;
+            max-height: 300px;
+        }
+
+        .media-preview img,
+        .media-preview video {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+            border-radius: 12px;
+        }
+
+        .media-preview.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar-glass">
+        <a href="/dashboard" class="nav-brand-glass" aria-label="Home">
+            <img src="/logo.png" alt="Logo" class="logo-img" onerror="this.style.display='none'">
+            <span class="brand-title">ZYLO Social</span>
+        </a>
+        <div class="nav-search-glass">
+            <input type="text" id="navbar-search" placeholder="Search User..." autocomplete="off">
+            <div class="search-results-glass" id="search-results"></div>
+        </div>
+        <div class="nav-links-glass">
+            <% if (user) { %>
+                <a href="#" class="nav-link-glass" title="Create Post" id="createPostBtn"><i class="fas fa-plus"></i></a>
+                <button class="nav-bell-glass" id="notifBell" aria-label="Notifications">
+                    <i class="fas fa-bell"></i>
+                    <% if (typeof hasNewNotifications !== 'undefined' && hasNewNotifications) { %>
+                    <span class="notif-dot"></span>
+                    <% } %>
+                </button>
+                <div class="notif-dropdown-glass" id="notifDropdown">
+                    <div class="notif-title">Notifications</div>
+                    <div class="notif-list">
+                        <%# Dummy notifications removed %>
+                        <%# Notifications will be loaded dynamically here %>
+                    </div>
+                </div>
+                <div class="user-dropdown-glass" id="userDropdownWrap">
+                    <button class="profile-avatar-glass" id="userDropdownBtn" aria-label="Profile">
+                        <% if (user.profile_picture) { %>
+                            <img src="<%= user.profile_picture %>" alt="Avatar" class="avatar-img-glass">
+                        <% } else { %>
+                            <i class="fas fa-user-circle"></i>
+                        <% } %>
+                    </button>
+                    <div class="user-dropdown-menu-glass" id="userDropdownMenu">
+                        <a href="/profile"><i class="fas fa-user"></i> My Profile</a>
+                        <a href="/activity"><i class="fas fa-history"></i> Activity</a>
+                        <a href="/settings"><i class="fas fa-cog"></i> Settings</a>
+                        <button onclick="toggleTheme()" class="dropdown-theme-toggle"><i class="fas fa-moon"></i> Dark Mode</button>
+                        <a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                    </div>
+                </div>
+            <% } else { %>
+                <a href="/login" class="nav-link-glass"><i class="fas fa-sign-in-alt"></i><span>Login</span></a>
+                <a href="/register" class="nav-link-glass"><i class="fas fa-user-plus"></i><span>Register</span></a>
+                <button onclick="toggleTheme()" class="theme-toggle-glass" title="Toggle Theme"><i class="fas fa-moon"></i></button>
+            <% } %>
+        </div>
+        <button class="hamburger-glass" id="hamburgerBtn" aria-label="Menu"><i class="fas fa-bars"></i></button>
+    </nav>
+    <script>
+    // Notifications dropdown
+    const bell = document.getElementById('notifBell');
+    const notifDropdown = document.getElementById('notifDropdown');
+    const notifList = notifDropdown ? notifDropdown.querySelector('.notif-list') : null; // Get the notification list container
+
+    // Function to fetch and display notifications
+    async function fetchNotifications() {
+        if (!notifList) return; // Ensure the list container exists
+
+        try {
+            // Assuming you have a backend endpoint /api/notifications
+            const response = await fetch('/api/notifications');
+            const data = await response.json();
+
+            if (data.success && data.notifications) {
+                notifList.innerHTML = ''; // Clear current notifications
+                if (data.notifications.length === 0) {
+                    notifList.innerHTML = '<div style="padding: 0.5rem 1rem; color: #d7dadc; opacity: 0.8;">No new notifications.</div>';
+                } else {
+                    data.notifications.forEach(notif => {
+                        const notifElement = `
+                            <div class="notif-item">
+                                <i class="fas fa-info-circle"></i>
+                                <span>${notif.message}</span>
+                                <small style="margin-left: auto; opacity: 0.7;">${new Date(notif.created_at).toLocaleDateString()}</small>
+                            </div>
+                        `;
+                        notifList.insertAdjacentHTML('beforeend', notifElement);
+                    });
+
+                    // Mark notifications as read after fetching/displaying
+                    fetch('/api/notifications/mark-read', { method: 'POST' })
+                        .then(response => response.json())
+                        .then(readData => {
+                            if (readData.success) {
+                                console.log(`Marked ${readData.markedCount} notifications as read.`);
+                                // Hide the red dot if it exists
+                                const notifDot = bell.querySelector('.notif-dot');
+                                if (notifDot) {
+                                    notifDot.style.display = 'none';
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error marking notifications as read:', error);
+                        });
+                }
+            } else {
+                 notifList.innerHTML = '<div style="padding: 0.5rem 1rem; color: #d7dadc; opacity: 0.8;">Failed to load notifications.</div>';
+            }
+        } catch (error) {
+            console.error('Error fetching notifications:', error);
+             notifList.innerHTML = '<div style="padding: 0.5rem 1rem; color: #d7dadc; opacity: 0.8;">Error loading notifications.</div>';
+        }
+    }
+
+    if (bell && notifDropdown) {
+        bell.addEventListener('click', e => {
+            notifDropdown.classList.toggle('active');
+            if (notifDropdown.classList.contains('active')) {
+                fetchNotifications(); // Fetch notifications when opening the dropdown
+            } else {
+                // Optional: Refetch notifications when closing if you want to show new ones that arrived while dropdown was open
+                // fetchNotifications();
+            }
+            e.stopPropagation();
+        });
+        document.addEventListener('click', e => {
+            if (!notifDropdown.contains(e.target) && e.target !== bell) {
+                notifDropdown.classList.remove('active');
+            }
+        });
+    }
+    // User dropdown
+    const userBtn = document.getElementById('userDropdownBtn');
+    const userMenu = document.getElementById('userDropdownMenu');
+    if (userBtn && userMenu) {
+        userBtn.addEventListener('click', e => {
+            userMenu.classList.toggle('active');
+            e.stopPropagation();
+        });
+        document.addEventListener('click', e => {
+            if (!userMenu.contains(e.target) && e.target !== userBtn) {
+                userMenu.classList.remove('active');
+            }
+        });
+    }
+    // Search bar (dummy results for now)
+    const searchInput = document.getElementById('navbar-search');
+    const searchResults = document.getElementById('search-results');
+    if (searchInput && searchResults) {
+        let searchTimeout = null;
+
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            const val = e.target.value.trim();
+
+            if (val.length > 1) { // Start searching after 2 or more characters
+                searchTimeout = setTimeout(async () => {
+                    try {
+                        const response = await fetch(`/api/search/users?q=${encodeURIComponent(val)}`);
+                        const data = await response.json();
+
+                        searchResults.innerHTML = ''; // Clear previous results
+
+                        if (data.success && data.users && data.users.length > 0) {
+                            data.users.forEach(user => {
+                                const resultItem = document.createElement('a');
+                                resultItem.classList.add('result-item');
+                                resultItem.href = `/profile/${user.id}`;
+                                resultItem.style.display = 'flex';
+                                resultItem.style.alignItems = 'center';
+                                resultItem.style.gap = '10px';
+
+                                const avatarHtml = user.profile_picture ?
+                                    `<img src="${user.profile_picture}" alt="Avatar" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;">` :
+                                    `<i class="fas fa-user-circle" style="font-size: 30px;"></i>`;
+
+                                resultItem.innerHTML = avatarHtml + `<span>${user.username}</span>`;
+
+                                searchResults.appendChild(resultItem);
+                            });
+                            searchResults.classList.add('active');
+                        } else {
+                            searchResults.innerHTML = '<div class="result-item">No users found</div>';
+                            searchResults.classList.add('active');
+                        }
+                    } catch (error) {
+                        console.error('Error fetching search results:', error);
+                        searchResults.innerHTML = '<div class="result-item">Error searching</div>';
+                        searchResults.classList.add('active');
+                    }
+                }, 300); // Debounce search for 300ms
+            } else {
+                searchResults.innerHTML = '';
+                searchResults.classList.remove('active');
+            }
+        });
+
+        document.addEventListener('click', e => {
+            if (!searchResults.contains(e.target) && e.target !== searchInput) {
+                searchResults.classList.remove('active');
+            }
+        });
+    }
+    // Hamburger menu (responsive, to be implemented)
+    // ...
+
+    // Create Post Modal
+    document.addEventListener('DOMContentLoaded', function() {
+        const createPostBtn = document.getElementById('createPostBtn');
+        const createPostModal = document.getElementById('createPostModal');
+        const closePostModal = document.getElementById('closePostModal');
+        const postMedia = document.getElementById('postMedia');
+        const mediaPreview = document.getElementById('mediaPreview');
+
+        if (createPostBtn && createPostModal && closePostModal) {
+            createPostBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                createPostModal.style.display = 'flex';
+                setTimeout(() => createPostModal.classList.add('active'), 10);
+            });
+
+            closePostModal.addEventListener('click', () => {
+                createPostModal.classList.remove('active');
+                setTimeout(() => createPostModal.style.display = 'none', 300);
+            });
+
+            window.addEventListener('click', (event) => {
+                if (event.target == createPostModal) {
+                    createPostModal.classList.remove('active');
+                    setTimeout(() => createPostModal.style.display = 'none', 300);
+                }
+            });
+        }
+
+        // Media preview functionality
+        if (postMedia && mediaPreview) {
+            postMedia.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        mediaPreview.innerHTML = '';
+                        if (file.type.startsWith('image/')) {
+                            const img = document.createElement('img');
+                            img.src = e.target.result;
+                            mediaPreview.appendChild(img);
+                        } else if (file.type.startsWith('video/')) {
+                            const video = document.createElement('video');
+                            video.src = e.target.result;
+                            video.controls = true;
+                            mediaPreview.appendChild(video);
+                        }
+                        mediaPreview.classList.add('active');
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    mediaPreview.classList.remove('active');
+                }
+            });
+        }
+
+        // Theme toggle (already present, keep it here)
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    });
+    </script>
+
+    <!-- Create Post Modal HTML -->
+    <div id="createPostModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="closePostModal">&times;</span>
+            <h2>Create New Post</h2>
+            <form action="/post/create" method="POST" enctype="multipart/form-data">
+                <div>
+                    <label for="postContent">What's on your mind?</label>
+                    <textarea id="postContent" name="content" placeholder="Share your thoughts..." required></textarea>
+                </div>
+
+                <div class="file-upload-container">
+                    <label for="postMedia">Add Media</label>
+                    <input type="file" id="postMedia" name="media" accept="image/*,video/*">
+                    <div id="mediaPreview" class="media-preview"></div>
+                </div>
+
+                <button type="submit">Share Post</button>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>     

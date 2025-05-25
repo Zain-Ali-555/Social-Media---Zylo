@@ -1,0 +1,59 @@
+<div class="theme-container">
+    <h2>Choose Theme</h2>
+    <div class="theme-grid">
+        <% themes.forEach(theme => { %>
+            <div class="theme-card" data-theme-id="<%= theme.id %>">
+                <h3><%= theme.name %> Mode</h3>
+                <div class="theme-preview" style="background-color: <%= theme.primary_color %>; color: <%= theme.text_color %>;">
+                    <div class="preview-header" style="background-color: <%= theme.secondary_color %>;">
+                        <div class="preview-nav"></div>
+                    </div>
+                    <div class="preview-content">
+                        <div class="preview-text" style="background-color: <%= theme.secondary_color %>;"></div>
+                        <div class="preview-text" style="background-color: <%= theme.secondary_color %>;"></div>
+                        <button class="preview-btn" style="background-color: <%= theme.accent_color %>; color: <%= theme.text_color %>;">
+                            Sample Button
+                        </button>
+                    </div>
+                </div>
+                <button class="btn apply-theme" style="background-color: <%= theme.accent_color %>; color: <%= theme.text_color %>;">
+                    Apply <%= theme.name %> Theme
+                </button>
+            </div>
+        <% }); %>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('.apply-theme').forEach(button => {
+    button.addEventListener('click', async function() {
+        const themeCard = this.closest('.theme-card');
+        const themeId = themeCard.dataset.themeId;
+        
+        try {
+            const response = await fetch(`/theme/${themeId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                document.documentElement.style.setProperty('--primary-color', data.theme.primary_color);
+                document.documentElement.style.setProperty('--secondary-color', data.theme.secondary_color);
+                document.documentElement.style.setProperty('--text-color', data.theme.text_color);
+                document.documentElement.style.setProperty('--accent-color', data.theme.accent_color);
+                
+                alert('Theme applied successfully!');
+            } else {
+                alert('Failed to apply theme. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error applying theme:', error);
+            alert('An error occurred while applying the theme.');
+        }
+    });
+});
+</script> 

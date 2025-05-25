@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Plyr CSS -->
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <style>
+        .comments-section { background: var(--secondary-color); border-radius: 8px; margin-top: 1rem; padding: 1rem; }
+        .comment-form { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+        .comment-form input { flex: 1; padding: 0.5rem; border-radius: 5px; border: 1px solid var(--border-color); }
+        .comments-list { display: flex; flex-direction: column; gap: 0.7rem; }
+        .comment { background: var(--background-color); border-radius: 6px; padding: 0.5rem 0.8rem; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
+        .comment strong { color: #1877f2; }
+        .comment small { color: var(--text-color); opacity: 0.7; }
+        .btn-delete-post { color: #e74c3c; background: none; border: none; font-size: 1.1rem; cursor: pointer; margin-left: auto; transition: color 0.2s; }
+        .btn-delete-post:hover { color: #b91c1c; }
+        .post-media img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        .plyr {
+            margin: 1rem 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <%# Removed the create post form %>
+        
+        <div class="posts">
+            <% posts.forEach(post => { %>
+                <div class="post-card" data-post-id="<%= post.id %>">
+                    <div class="post-header-new">
+                        <div class="post-user-info">
+                            <a href="/profile/<%= post.user_id %>" class="post-user-link">
+                                <% if (post.profile_picture) { %>
+                                    <img src="<%= post.profile_picture %>" alt="Profile Picture" class="post-avatar-new">
+                                <% } else { %>
+                                    <i class="fas fa-user-circle post-avatar-new"></i>
+                                <% } %>
+                                <span class="post-username-new"><%= post.username %></span>
+                            </a>
+                            <% if (user && user.id !== post.user_id) { %>
+                                <button class="btn-follow-post-new" data-user-id="<%= post.user_id %>" data-post-id="<%= post.id %>">
+                                    <%= post.is_following_author ? 'Following' : 'Follow' %>
+                                </button>
+                            <% } %>
+                        </div>
+                        <div class="post-meta-new">
+                            <span class="post-date-new"><%= new Date(post.created_at).toLocaleDateString() %> at <%= new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) %></span>
+                            <% if (user && user.id === post.user_id) { %>
+                                <button class="btn-delete-post-new" title="Delete Post" onclick="deletePost('<%= post.id %>', this)"><i class="fas fa-times"></i></button>
+                            <% } %>
+                        </div>
+                    </div>
+                    <div class="post-content-new">
+                        <%= post.content %>
+                    </div>
+                    <% if (post.media_url) { %>
+                        <div class="post-media-new">
+                            <% if (post.media_type === 'video') { %>
+                                <video class="plyr-js" controls playsinline>
+                                    <source src="<%= post.media_url %>" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            <% } else { %>
+                                <img src="<%= post.media_url %>" alt="Post media">
+                            <% } %>
+                        </div>
+                    <% } %>
+                    <div class="post-footer-new">
+                        <div class="post-actions-new">
+                            <button class="btn-action-new like-btn <%= post.is_liked ? 'liked' : '' %>" data-post-id="<%= post.id %>">
+                                <i class="fas fa-thumbs-up"></i> Like
+                        </button>
+                            <button class="btn-action-new comment-btn" data-post-id="<%= post.id %>">
+                                <i class="fas fa-comment"></i> Comment
+                        </button>
+                            <button onclick="sharePost('<%= post.id %>')" class="btn-action-new">
+                                <i class="fas fa-share"></i> Share
+                            </button>
+                            <button onclick="toggleSave('<%= post.id %>')" class="btn-action-new <%= post.is_saved ? 'saved' : '' %>">
+                                <i class="<%= post.is_saved ? 'fas' : 'far' %> fa-bookmark"></i> Save
+                            </button>
+                        </div>
+                    </div>
+                    <div id="comments-<%= post.id %>" class="comments-section" style="display: none;">
+                        <form onsubmit="submitComment(event, '<%= post.id %>')" class="comment-form">
+                            <input type="text" placeholder="Write a comment..." required>
+                            <button type="submit" class="btn">Comment</button>
+                        </form>
+                        <div class="comments-list"></div>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+    </div>
+    <!-- Plyr JS -->
+    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const players = Array.from(document.querySelectorAll('.plyr-js')).map(p => new Plyr(p, {
+          controls: [
+            'play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'settings', 'pip', 'airplay', 'fullscreen'
+          ],
+          settings: ['quality', 'speed', 'loop'],
+          seekTime: 10,
+          speed: { selected: 1, options: [0.5, 1, 1.25, 1.5, 2] },
+        }));
+      });
+    </script>
+    <script>
+    // Handle follow/unfollow from post button
+    document.querySelectorAll('.btn-follow-post-new').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const userIdToFollow = btn.dataset.userId;
+            const isCurrentlyFollowing = btn.textContent.trim() === 'Following';
+            const url = isCurrentlyFollowing ? `/user/${userIdToFollow}/unfollow` : `/user/${userIdToFollow}/follow`;
+            const method = 'POST';
+
+            try {
+                const response = await fetch(url, { method });
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update button text on the clicked button
+                    btn.textContent = isCurrentlyFollowing ? 'Follow' : 'Following';
+
+                    // Optional: Update follower count on the post author's profile page if it's open
+                    // This is more complex as it requires finding the element on a different page,
+                    // so we won't implement it directly here for simplicity.
+
+                } else {
+                    alert('Operation failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error toggling follow status from post:', error);
+                alert('An error occurred while performing the operation.');
+            }
+        });
+    });
+
+    // Live like update
+    document.querySelectorAll('.like-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const postId = btn.dataset.postId;
+            try {
+                const response = await fetch(`/post/${postId}/like`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+                const data = await response.json();
+                const likeCount = btn.querySelector('.like-count');
+                if (data.liked) {
+                    btn.classList.add('liked');
+                    likeCount.textContent = parseInt(likeCount.textContent) + 1;
+                } else {
+                    btn.classList.remove('liked');
+                    likeCount.textContent = Math.max(0, parseInt(likeCount.textContent) - 1);
+                }
+            } catch (error) { console.error('Error toggling like:', error); }
+        });
+    });
+    // Show/hide and load comments
+    document.querySelectorAll('.comment-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const postId = btn.dataset.postId;
+            const section = document.getElementById(`comments-${postId}`);
+            section.style.display = section.style.display === 'none' ? 'block' : 'none';
+            if (section.style.display === 'block') loadComments(postId);
+        });
+    });
+    async function loadComments(postId) {
+        try {
+            const response = await fetch(`/post/${postId}/comments`);
+            const data = await response.json();
+            const commentsList = document.querySelector(`#comments-${postId} .comments-list`);
+            commentsList.innerHTML = (data.comments || []).map(comment => `
+                <div class="comment">
+                    <strong>${comment.username}</strong>
+                    <span> &middot; </span>
+                    <small>${new Date(comment.created_at).toLocaleDateString()}</small>
+                    <div>${comment.content}</div>
+                </div>
+            `).join('');
+        } catch (error) { console.error('Error loading comments:', error); }
+    }
+    async function submitComment(event, postId) {
+        event.preventDefault();
+        const form = event.target;
+        const input = form.querySelector('input');
+        const content = input.value.trim();
+        if (!content) return;
+        try {
+            const response = await fetch(`/post/${postId}/comment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content })
+            });
+            const data = await response.json();
+            if (data.comment) {
+                const commentsList = document.querySelector(`#comments-${postId} .comments-list`);
+                commentsList.insertAdjacentHTML('afterbegin', `
+                    <div class="comment">
+                        <strong>${data.comment.username}</strong>
+                        <span> &middot; </span>
+                        <small>${new Date(data.comment.created_at).toLocaleDateString()}</small>
+                        <div>${data.comment.content}</div>
+                    </div>
+                `);
+                input.value = '';
+                // Update comment count
+                const commentBtn = document.querySelector(`.comment-btn[data-post-id="${postId}"] .comment-count`);
+                commentBtn.textContent = parseInt(commentBtn.textContent) + 1;
+            }
+        } catch (error) { console.error('Error submitting comment:', error); }
+    }
+    async function deletePost(postId, btn) {
+        if (!confirm('Are you sure you want to delete this post?')) return;
+        try {
+            const response = await fetch(`/post/${postId}/delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+            const data = await response.json();
+            if (data.success) {
+                // Remove post card from DOM
+                const card = btn.closest('.post-card');
+                card.parentNode.removeChild(card);
+            }
+        } catch (error) { alert('Failed to delete post.'); }
+    }
+    async function toggleSave(postId) {
+        try {
+            const response = await fetch(`/post/${postId}/save`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+            const data = await response.json();
+            const saveBtn = document.querySelector(`button[onclick="toggleSave('${postId}')"]`);
+            const icon = saveBtn.querySelector('i');
+            if (data.saved) {
+                saveBtn.classList.add('saved');
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+            } else {
+                saveBtn.classList.remove('saved');
+                icon.classList.remove('fas');
+                icon.classList.add('far');
+            }
+        } catch (error) { console.error('Error toggling save:', error); }
+    }
+    async function sharePost(postId) {
+        try {
+            const response = await fetch(`/post/${postId}/share`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+            const data = await response.json();
+            if (data.success) {
+                await navigator.clipboard.writeText(data.shareLink);
+                alert('Share link copied to clipboard!');
+            }
+        } catch (error) {
+            console.error('Error sharing post:', error);
+            alert('Failed to generate share link');
+        }
+    }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liked Posts</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Liked Posts</h1>
+        <% if (posts.length === 0) { %>
+            <div class="no-posts">
+                <p>You haven't liked any posts yet.</p>
+            </div>
+        <% } else { %>
+            <div class="posts-grid">
+                <% posts.forEach(post => { %>
+                    <div class="post-card">
+                        <div class="post-header">
+                            <h3><%= post.username %></h3>
+                            <span class="post-date"><%= new Date(post.created_at).toLocaleDateString() %></span>
+                        </div>
+                        <div class="post-content">
+                            <%= post.content %>
+                            <% if (post.media_url) { %>
+                                <div class="post-media">
+                                    <img src="<%= post.media_url %>" alt="Post media">
+                                </div>
+                            <% } %>
+                        </div>
+                        <div class="post-actions">
+                            <button class="like-btn <%= post.is_liked ? 'liked' : '' %>" data-post-id="<%= post.id %>">
+                                <i class="fas fa-heart"></i>
+                                <span class="like-count"><%= post.like_count %></span>
+                            </button>
+                            <button class="comment-btn" data-post-id="<%= post.id %>">
+                                <i class="fas fa-comment"></i>
+                                <span class="comment-count"><%= post.comment_count %></span>
+                            </button>
+                            <button class="save-btn <%= post.is_saved ? 'saved' : '' %>" data-post-id="<%= post.id %>">
+                                <i class="fas fa-bookmark"></i>
+                            </button>
+                        </div>
+                        <div class="comments-section" id="comments-<%= post.id %>" style="display: none;">
+                            <div class="comments-list"></div>
+                            <div class="comment-form">
+                                <textarea placeholder="Write a comment..."></textarea>
+                                <button class="submit-comment">Post</button>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        <% } %>
+    </div>
+    <script src="/js/post-interactions.js"></script>
+</body>
+</html> 

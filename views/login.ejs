@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            overflow: hidden;
+        }
+        .split-auth {
+            display: flex;
+            min-height: 100vh;
+            background: linear-gradient(-45deg, var(--secondary-color), var(--background-color), var(--secondary-color), var(--background-color));
+            background-size: 400% 400%;
+            animation: gradientAnimation 15s ease infinite;
+            overflow: hidden;
+        }
+        .auth-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-end;
+            padding: 0 3vw;
+        }
+        .auth-branding {
+            max-width: 400px;
+            text-align: left;
+        }
+        .auth-branding .brand {
+            font-size: 2.8rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+        .auth-branding .tagline {
+            font-size: 1.2rem;
+            color: var(--text-color);
+            opacity: 0.85;
+            margin-bottom: 1.2rem;
+        }
+        .auth-branding .desc {
+            font-size: 1.1rem;
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+        .auth-right {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 3vw;
+        }
+        .auth-box {
+            width: 100%;
+            max-width: 400px;
+            padding: 1.5rem 2rem;
+            box-sizing: border-box;
+        }
+        @media (max-width: 900px) {
+            .split-auth { flex-direction: column; }
+            .auth-left, .auth-right { justify-content: center; align-items: center; padding: 2vw; }
+            .auth-left, .auth-right { flex: unset; }
+            .auth-branding { text-align: center; }
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.6rem 1rem;
+            box-sizing: border-box;
+        }
+        .auth-box h1 {
+            margin-bottom: 1.5rem;
+        }
+        .auth-box .alert {
+            margin-bottom: 1rem;
+        }
+        .auth-box button[type="submit"] {
+            margin-top: 0.5rem;
+        }
+        .auth-box .auth-link {
+            margin-top: 1rem;
+        }
+        @keyframes gradientAnimation {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="split-auth">
+        <div class="auth-left">
+            <div class="auth-branding">
+                <div class="brand">ZYLO Social</div>
+                <div class="tagline">Connect. Share. Discover.</div>
+                <div class="desc">ZYLO Social helps you connect and share with the people in your life. Join the conversation and discover new friends, stories, and communities.</div>
+            </div>
+        </div>
+        <div class="auth-right">
+            <div class="auth-box">
+                <h1 style="text-align:center;">Login</h1>
+                <% if (messages && messages.error && messages.error.length > 0) { %>
+                    <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <%= messages.error %></div>
+                <% } %>
+                <% if (messages && messages.success && messages.success.length > 0) { %>
+                    <div class="alert alert-success"><i class="fas fa-check-circle"></i> <%= messages.success %></div>
+                <% } %>
+                <form action="/login" method="POST">
+                    <div class="form-group">
+                        <label for="username_or_email">Username or Email</label>
+                        <input type="text" id="username_or_email" name="username_or_email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </form>
+                <p class="auth-link">Don't have an account? <a href="/register">Register</a></p>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        });
+    </script>
+</body>
+</html> 

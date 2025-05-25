@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Plyr CSS -->
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+</head>
+<body>
+    <div class="container">
+        <div class="post-card">
+            <div class="post-header">
+                <div class="post-user">
+                    <i class="fas fa-user-circle"></i>
+                    <span><%= post.username %></span>
+                </div>
+                <div class="post-date">
+                    <%= new Date(post.created_at).toLocaleDateString() %>
+                </div>
+            </div>
+            <div class="post-content">
+                <%= post.content %>
+            </div>
+            <% if (post.media_url) { %>
+                <div class="post-media">
+                    <% if (post.media_type === 'video') { %>
+                        <video class="plyr-js" controls playsinline>
+                            <source src="<%= post.media_url %>" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    <% } else { %>
+                        <img src="<%= post.media_url %>" alt="Post media">
+                    <% } %>
+                </div>
+            <% } %>
+            <div class="post-stats">
+                <span><i class="fas fa-heart"></i> <%= post.like_count %></span>
+                <span><i class="fas fa-comment"></i> <%= post.comment_count %></span>
+            </div>
+            <% if (isAuthenticated) { %>
+                <div class="post-actions">
+                    <%# You might want to add like/comment/share actions here if authenticated %>
+                     <a href="/login" class="btn btn-primary">Login to Interact</a> <%# Keep login for unauthenticated users %>
+                </div>
+            <% } else { %>
+                 <div class="post-actions">
+                     <a href="/login" class="btn btn-primary">Login to Interact</a>
+                 </div>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- Plyr JS -->
+    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Plyr for any video players on the page
+        const players = Array.from(document.querySelectorAll('.plyr-js')).map(p => new Plyr(p, {
+          controls: [
+            'play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'settings', 'pip', 'airplay', 'fullscreen'
+          ],
+          settings: ['quality', 'speed', 'loop'],
+          seekTime: 10,
+          speed: { selected: 1, options: [0.5, 1, 1.25, 1.5, 2] },
+        }));
+
+        // Apply saved theme on page load
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      });
+    </script>
+</body>
+</html> 

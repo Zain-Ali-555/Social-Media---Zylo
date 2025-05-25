@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Activity</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .page-header {
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        .page-header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        
+        .page-header p {
+            color: #555;
+            font-size: 1.1rem;
+        }
+        
+        .activity-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            background: rgba(0,0,0,0.05);
+            padding: 0.5rem;
+            border-radius: 16px;
+            border: 1px solid rgba(0,0,0,0.1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .activity-tab {
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            color: #555;
+            font-weight: 600;
+            font-size: 1.1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .activity-tab::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #0079d3, #00a8ff);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 0;
+        }
+        
+        .activity-tab:hover::before {
+            opacity: 0.1;
+        }
+        
+        .activity-tab.active::before {
+            opacity: 1;
+        }
+        
+        .activity-tab i {
+            font-size: 1.3rem;
+            position: relative;
+            z-index: 1;
+            transition: transform 0.3s ease;
+        }
+        
+        .activity-tab span {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .activity-tab:hover i {
+            transform: scale(1.1);
+        }
+        
+        .activity-tab.active {
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(0,121,211,0.3);
+        }
+        
+        .activity-content {
+            display: none;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+        }
+        
+        .activity-content.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .no-posts {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: rgba(0,0,0,0.05);
+            border-radius: 20px;
+            border: 1px solid rgba(0,0,0,0.1);
+            margin: 2rem 0;
+        }
+        
+        .no-posts i {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            color: #0079d3;
+            opacity: 0.8;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .no-posts p {
+            color: #555;
+            font-size: 1.2rem;
+            margin: 0;
+        }
+
+        .posts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 1rem 0;
+        }
+
+        .post-card {
+            background: rgba(0,0,0,0.05);
+            border-radius: 16px;
+            border: 1px solid rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .post-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            border-color: rgba(0,121,211,0.3);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Loading animation */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(0,0,0,0.1);
+            border-radius: 50%;
+            border-top-color: #0079d3;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .activity-tabs {
+                flex-direction: column;
+                padding: 0.5rem;
+            }
+
+            .activity-tab {
+                padding: 0.8rem 1.2rem;
+            }
+
+            .posts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .page-header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="page-header">
+            <h1>My Activity</h1>
+            <p>Track your engagement and interactions across the platform</p>
+        </div>
+        
+        <div class="activity-tabs">
+            <div class="activity-tab active" data-tab="saved">
+                <i class="fas fa-bookmark"></i>
+                <span>Saved Posts</span>
+            </div>
+            <div class="activity-tab" data-tab="liked">
+                <i class="fas fa-heart"></i>
+                <span>Liked Posts</span>
+            </div>
+            <div class="activity-tab" data-tab="commented">
+                <i class="fas fa-comment"></i>
+                <span>Commented Posts</span>
+            </div>
+        </div>
+        
+        <div id="saved" class="activity-content active">
+            <% if (savedPosts.length === 0) { %>
+                <div class="no-posts">
+                    <i class="fas fa-bookmark"></i>
+                    <p>You haven't saved any posts yet.</p>
+                </div>
+            <% } else { %>
+                <div class="posts-grid">
+                    <% savedPosts.forEach(post => { %>
+                        <%- include('partials/post-card', { post }) %>
+                    <% }); %>
+                </div>
+            <% } %>
+        </div>
+        
+        <div id="liked" class="activity-content">
+            <% if (likedPosts.length === 0) { %>
+                <div class="no-posts">
+                    <i class="fas fa-heart"></i>
+                    <p>You haven't liked any posts yet.</p>
+                </div>
+            <% } else { %>
+                <div class="posts-grid">
+                    <% likedPosts.forEach(post => { %>
+                        <%- include('partials/post-card', { post }) %>
+                    <% }); %>
+                </div>
+            <% } %>
+        </div>
+        
+        <div id="commented" class="activity-content">
+            <% if (commentedPosts.length === 0) { %>
+                <div class="no-posts">
+                    <i class="fas fa-comment"></i>
+                    <p>You haven't commented on any posts yet.</p>
+                </div>
+            <% } else { %>
+                <div class="posts-grid">
+                    <% commentedPosts.forEach(post => { %>
+                        <%- include('partials/post-card', { post }) %>
+                    <% }); %>
+                </div>
+            <% } %>
+        </div>
+
+        <div class="loading">
+            <div class="loading-spinner"></div>
+        </div>
+    </div>
+    
+    <script>
+        document.querySelectorAll('.activity-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const loading = document.querySelector('.loading');
+                loading.classList.add('active');
+
+                // Remove active class from all tabs and contents
+                document.querySelectorAll('.activity-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.activity-content').forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding content
+                tab.classList.add('active');
+                
+                // Simulate loading for smooth transition
+                setTimeout(() => {
+                    document.getElementById(tab.dataset.tab).classList.add('active');
+                    loading.classList.remove('active');
+                }, 300);
+            });
+        });
+
+        // Add intersection observer for post cards animation
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, {
+            threshold: 0.1
+        });
+
+        document.querySelectorAll('.post-card').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,38 @@
+<footer class="footer-premier">
+    <div class="footer-content-premier">
+        <p>&copy; <%= new Date().getFullYear() %> ZYLO Social. All rights reserved.</p>
+    </div>
+</footer>
+
+<style>
+.footer-premier {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(90deg, #1a1a1b, #2c2c2e);
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.3);
+    padding: 1.5rem 1rem;
+    margin-top: 3rem;
+    width: 100%;
+    color: rgba(255,255,255,0.6);
+    font-size: 1rem;
+    position: relative; /* Ensure it's positioned correctly */
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+.footer-content-premier {
+    text-align: center;
+}
+
+.footer-premier p {
+    margin: 0;
+    font-weight: 400;
+    transition: color 0.3s ease;
+}
+
+.footer-premier p:hover {
+    color: rgba(255,255,255,0.9);
+}
+</style>

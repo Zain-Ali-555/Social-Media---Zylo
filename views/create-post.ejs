@@ -1,0 +1,48 @@
+<div class="create-post-container">
+    <h2>Create a New Post</h2>
+    <form action="/post" method="POST" enctype="multipart/form-data" class="create-post-form">
+        <div class="form-group">
+            <textarea name="content" placeholder="What's on your mind?" required></textarea>
+        </div>
+        
+        <div class="media-upload">
+            <label for="media">Add Photos/Videos:</label>
+            <input type="file" id="media" name="media" multiple accept="image/*,video/*">
+            <small>You can upload up to 5 files (10MB each)</small>
+            <div class="media-preview" id="mediaPreview"></div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Post</button>
+            <a href="/dashboard" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.getElementById('media').addEventListener('change', function(e) {
+    const files = e.target.files;
+    const preview = document.getElementById('mediaPreview');
+    preview.innerHTML = '';
+
+    if (files.length > 5) {
+        alert('You can only upload up to 5 files');
+        e.target.value = '';
+        return;
+    }
+
+    Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const div = document.createElement('div');
+            if (file.type.startsWith('image/')) {
+                div.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+            } else if (file.type.startsWith('video/')) {
+                div.innerHTML = `<video src="${e.target.result}" controls></video>`;
+            }
+            preview.appendChild(div);
+        }
+        reader.readAsDataURL(file);
+    });
+});
+</script> 

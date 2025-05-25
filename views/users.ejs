@@ -1,0 +1,11 @@
+<div class="users-container">
+    <h2>All Users</h2>
+    <div class="users-grid">
+        <% users.forEach(user => { %>
+            <div class="user-card">
+                <h3><%= user.username %></h3>
+                <p><%= user.email %></p>
+            </div>
+        <% }); %>
+    </div>
+</div> 

@@ -1,0 +1,322 @@
+<div class="profile-container">
+    <div class="profile-header">
+        <div class="profile-picture-container">
+            <img src="<%= profileOwner.profile_picture || '/images/default-avatar.png' %>" alt="Profile Picture" class="profile-picture" id="profilePicture">
+            <% if (isOwnProfile) { %>
+            <form id="profilePictureForm" action="/profile/picture" method="POST" enctype="multipart/form-data" style="display: none;">
+                <input type="file" name="profilePicture" id="profilePictureInput" accept="image/*" onchange="this.form.submit()">
+            </form>
+            <button class="btn btn-primary" onclick="document.getElementById('profilePictureInput').click()">
+                <i class="fas fa-camera"></i> Change Picture
+            </button>
+            <% } %>
+        </div>
+        <h2><%= profileOwner.username %>'s Profile</h2>
+        <p><%= profileOwner.email %></p>
+
+        <div class="profile-stats" style="display: flex; justify-content: center; gap: 2rem; margin-top: 1rem;">
+            <div class="stat">
+                <strong><%= followerCount %></strong> Followers
+            </div>
+            <div class="stat">
+                <strong><%= followingCount %></strong> Following
+            </div>
+        </div>
+
+        <% if (!isOwnProfile) { %>
+            <button id="followBtn" class="btn btn-secondary" data-user-id="<%= profileOwner.id %>" style="margin-top: 1rem;">
+                <%= isFollowing ? 'Unfollow' : 'Follow' %>
+            </button>
+        <% } %>
+
+    </div>
+
+    <div class="posts-container">
+        <h3><%= isOwnProfile ? 'Your' : profileOwner.username + "'s" %> Posts</h3>
+        <% posts.forEach(post => { %>
+            <div class="post-card" data-post-id="<%= post.id %>">
+                <div class="post-header" style="display:flex;align-items:center;">
+                    <div class="post-user">
+                        <a href="/profile/<%= post.user_id %>" style="text-decoration: none; color: inherit; display: flex; align-items: center;">
+                            <% if (post.profile_picture) { %>
+                                <img src="<%= post.profile_picture %>" alt="Profile Picture" class="post-avatar" style="width: 30px; height: 30px; border-radius: 50%; margin-right: 10px;">
+                            <% } else { %>
+                                <i class="fas fa-user-circle" style="font-size: 30px; margin-right: 10px;"></i>
+                            <% } %>
+                            <span><%= post.username %></span>
+                        </a>
+                    </div>
+                    <div class="post-date" style="margin-left:1rem;">
+                        <%= new Date(post.created_at).toLocaleDateString() %>
+                    </div>
+                    <%# Check if the logged-in user is the post owner to show delete button %>
+                    <% if (user && user.id === post.user_id) { %>
+                        <button class="btn-delete-post" title="Delete Post" onclick="deletePost('<%= post.id %>', this)"><i class="fas fa-trash"></i></button>
+                    <% } %>
+                </div>
+                <div class="post-content">
+                    <%= post.content %>
+                </div>
+                <%# Updated post actions to match dashboard %>
+                <div class="post-footer-new">
+                    <div class="post-actions-new">
+                        <button class="btn-action-new like-btn <%= post.is_liked ? 'liked' : '' %>" data-post-id="<%= post.id %>">
+                            <i class="fas fa-thumbs-up"></i> Like
+                        </button>
+                        <button class="btn-action-new comment-btn" data-post-id="<%= post.id %>">
+                            <i class="fas fa-comment"></i> Comment
+                        </button>
+                        <button onclick="sharePost('<%= post.id %>')" class="btn-action-new">
+                            <i class="fas fa-share"></i> Share
+                        </button>
+                        <button onclick="toggleSave('<%= post.id %>')" class="btn-action-new <%= post.is_saved ? 'saved' : '' %>">
+                            <i class="<%= post.is_saved ? 'fas' : 'far' %> fa-bookmark"></i> Save
+                        </button>
+                    </div>
+                </div>
+                <div id="comments-<%= post.id %>" class="comments-section" style="display: none;">
+                    <form onsubmit="submitComment(event, '<%= post.id %>')" class="comment-form">
+                        <input type="text" placeholder="Write a comment..." required>
+                        <button type="submit" class="btn btn-primary">Commenat</button>
+                    </form>
+                    <div class="comments-list"></div>
+                </div>
+            </div>
+        <% }); %>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+<script>
+const followBtn = document.getElementById('followBtn');
+if (followBtn) {
+    followBtn.addEventListener('click', async () => {
+        const profileUserId = followBtn.dataset.userId; // Get user ID from data attribute
+        const isCurrentlyFollowing = followBtn.textContent.trim() === 'Unfollow';
+        const url = isCurrentlyFollowing ? `/user/${profileUserId}/unfollow` : `/user/${profileUserId}/follow`;
+        const method = 'POST';
+
+        try {
+            const response = await fetch(url, { method });
+            const data = await response.json();
+
+            if (data.success) {
+                // Update button text
+                followBtn.textContent = isCurrentlyFollowing ? 'Follow' : 'Unfollow';
+
+                // Update follower count (only if on the profile owner's page)
+                // Note: This simple approach assumes you are viewing *another* user's profile.
+                // If viewing your own profile (which doesn't have the follow button), this part won't run.
+                const followerCountSpan = document.querySelector('.profile-stats .stat:first-child strong');
+                if (followerCountSpan) { // Ensure the element exists before trying to update
+                    let currentFollowerCount = parseInt(followerCountSpan.textContent);
+                    if (isCurrentlyFollowing) {
+                        followerCountSpan.textContent = currentFollowerCount - 1;
+                    } else {
+                        followerCountSpan.textContent = currentFollowerCount + 1;
+                    }
+                }
+
+            } else {
+                alert('Operation failed: ' + (data.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error toggling follow status:', error);
+            alert('An error occurred while performing the operation.');
+        }
+    });
+}
+
+async function deletePost(postId, btn) {
+    if (!confirm('Are you sure you want to delete this post?')) return;
+    try {
+        const response = await fetch(`/post/${postId}/delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        const data = await response.json();
+        if (data.success) {
+            // Remove post card from DOM
+            const card = btn.closest('.post-card');
+            card.parentNode.removeChild(card);
+        }
+    } catch (error) { alert('Failed to delete post.'); }
+}
+
+async function toggleSave(postId) {
+    try {
+        const response = await fetch(`/post/${postId}/save`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        const data = await response.json();
+        const saveBtn = document.querySelector(`button[onclick="toggleSave('${postId}')"]`);
+        const icon = saveBtn.querySelector('i');
+        if (data.saved) {
+            saveBtn.classList.add('saved');
+            icon.classList.remove('far');
+            icon.classList.add('fas');
+        } else {
+            saveBtn.classList.remove('saved');
+            icon.classList.remove('fas');
+            icon.classList.add('far');
+        }
+    } catch (error) { console.error('Error toggling save:', error); }
+}
+
+async function sharePost(postId) {
+    try {
+        const response = await fetch(`/post/${postId}/share`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        const data = await response.json();
+        if (data.success) {
+            await navigator.clipboard.writeText(data.shareLink);
+            alert('Share link copied to clipboard!');
+        }
+    } catch (error) {
+        console.error('Error sharing post:', error);
+        alert('Failed to generate share link');
+    }
+}
+</script>
+
+<style>
+.profile-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: rgba(var(--background-color-rgb), 0.9);
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    color: var(--text-color);
+    text-align: center;
+}
+
+.profile-header {
+    margin-bottom: 2rem;
+}
+
+.profile-picture-container {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 1.5rem;
+}
+
+.profile-picture {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 5px solid var(--primary-color);
+    box-shadow: 0 6px 20px rgba(var(--primary-color-rgb), 0.3);
+    transition: transform 0.3s ease;
+}
+
+.profile-picture-container:hover .profile-picture {
+    transform: scale(1.05);
+}
+
+.profile-picture-container button {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: var(--primary-color);
+    border: none;
+    border-radius: 50%;
+    padding: 0.8rem;
+    color: var(--background-color);
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(var(--primary-color-rgb), 0.4);
+    transition: all 0.3s ease;
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.8);
+}
+
+.profile-picture-container:hover button {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
+}
+
+.profile-picture-container button:hover {
+    background: var(--accent-color);
+    box-shadow: 0 4px 15px rgba(var(--accent-color-rgb), 0.5);
+}
+
+.profile-picture-container button:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 15px rgba(var(--primary-color-rgb), 0.3);
+}
+
+.profile-container h2 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+    font-weight: 700;
+}
+
+.profile-container p {
+    font-size: 1.1rem;
+    color: var(--text-color);
+    opacity: 0.7;
+    margin-bottom: 1.5rem;
+}
+
+.profile-stats {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.profile-stats .stat {
+    text-align: center;
+    font-size: 1.1rem;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+.profile-stats .stat strong {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    /* color: var(--primary-color); */
+    margin-bottom: 0.3rem;
+}
+
+#followBtn {
+    margin-top: 2rem;
+    padding: 0.8rem 2rem;
+    border-radius: 12px;
+    border: none;
+    background: var(--primary-color);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(var(--primary-color-rgb), 0.3);
+}
+
+#followBtn:hover {
+    background: var(--accent-color);
+    box-shadow: 0 6px 20px rgba(var(--accent-color-rgb), 0.4);
+    transform: translateY(-2px);
+}
+
+#followBtn:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 15px rgba(var(--primary-color-rgb), 0.3);
+}
+
+.posts-container h3 {
+    font-size: 1.8rem;
+    margin-top: 3rem;
+    margin-bottom: 2rem;
+    color: var(--text-color);
+    font-weight: 700;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 1rem;
+}
+
+/* Reuse post-card styles from dashboard or define here if unique */
+
+</style> 
