@@ -97,8 +97,8 @@ Through recent development and debugging, the following issues have been address
 
 ## Contributing
 
-(Optional section - add guidelines for contributions if you plan to accept them)
+**Contributor:** Zain (MalikZain555)
 
 ## License
 
-(Optional section - add license information, e.g., MIT License) 
+Zylo 2025 by MalikZain555 
