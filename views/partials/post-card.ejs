@@ -18,7 +18,7 @@
         <div class="post-media">
             <% if (post.media_type === 'video') { %>
                 <video class="plyr-js" controls playsinline>
-                    <source src="<%= post.media_url %>" type="video/mp4">
+                    <source src="<%= post.media_url %>">
                     Your browser does not support the video tag.
                 </video>
             <% } else { %>
