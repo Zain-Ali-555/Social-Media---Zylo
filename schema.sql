@@ -104,4 +104,4 @@ VALUES
 ('light', '#007bff', '#6c757d', '#333', '#28a745', '#dee2e6', '#fff'),
 ('dark', '#0d6efd', '#adb5bd', '#f8f9fa', '#198754', '#495057', '#212529');
 
-ALTER TABLE posts MODIFY content TEXT NULL; 
+    ALTER TABLE posts MODIFY content TEXT NULL; 
