@@ -66,19 +66,16 @@
                     </div>
                     <% if (post.media_url) { %>
                         <div class="post-media-new">
-                            <% if (post.media_type && post.media_type.toLowerCase().startsWith('video')) { %>
+                            <%# If media_type is explicitly 'image', render image, otherwise render video %>
+                            <% if (post.media_type && post.media_type.toLowerCase().trim() === 'image') { %>
+                                <img src="<%= post.media_url %>" alt="Post media">
+                            <% } else { %>
                                 <video class="plyr-js" controls playsinline>
                                     <source src="<%= post.media_url %>">
                                     Your browser does not support the video tag.
                                 </video>
-                            <% } else if (post.media_type && post.media_type.toLowerCase().startsWith('image')) { %>
-                                <img src="<%= post.media_url %>" alt="Post media">
-                            <% } else { %>
-                                <%# Fallback if media_type is neither video nor image, or is null/undefined %>
-                                <%# You might want a default icon or message here, or render nothing %>
-                                <img src="<%= post.media_url %>" alt="Post media (unknown type)"> <%# Default to image display %>
                             <% } %>
-                        </div>
+                        </div> 
                     <% } %>
                     <div class="post-footer-new">
                         <div class="post-actions-new">
