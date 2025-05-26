@@ -456,51 +456,68 @@ app.get('/dashboard', (req, res) => {
     });
 });
 
-// Update post creation route
-app.post('/post/create', upload.single('media'), async (req, res) => {
+// Update post creation route to handle separate image/video uploads
+app.post('/post/create', upload.fields([{ name: 'imageMedia', maxCount: 1 }, { name: 'videoMedia', maxCount: 1 }]), async (req, res) => {
     if (!req.session.user) {
         return res.status(401).json({ error: 'Not authenticated' });
     }
 
     try {
         console.log('Received post creation request');
-        const { content } = req.body;
+        const { content, mediaType } = req.body; // Get content and selected media type
         const userId = req.session.user.id;
         
         console.log('Post content:', content);
         console.log('User ID:', userId);
+        console.log('Selected Media Type:', mediaType);
+        console.log('Received files:', req.files);
+
+        const imageFile = req.files['imageMedia'] ? req.files['imageMedia'][0] : null;
+        const videoFile = req.files['videoMedia'] ? req.files['videoMedia'][0] : null;
+
+        let mediaUrl = null;
+        let finalMediaType = null;
+
+        // Determine the media URL and type based on which file was uploaded and selected type
+        if (imageFile && mediaType === 'image') {
+            mediaUrl = imageFile.path;
+            finalMediaType = 'image';
+        } else if (videoFile && mediaType === 'video') {
+            mediaUrl = videoFile.path;
+            finalMediaType = 'video';
+        } else if (imageFile) {
+             // Fallback: if image uploaded but mediaType wasn't 'image', assume image
+            mediaUrl = imageFile.path;
+            finalMediaType = 'image';
+        } else if (videoFile) {
+             // Fallback: if video uploaded but mediaType wasn't 'video', assume video
+            mediaUrl = videoFile.path;
+            finalMediaType = 'video';
+        }
 
         // Check if at least content or a file is provided
-        if (!content && !req.file) {
+        if (!content && !mediaUrl) {
             console.log('No content or file provided');
-            req.flash('error_msg', 'Please provide content or upload a file.');
+            req.flash('error_msg', 'Please provide content or upload an image/video.');
             return res.redirect('/dashboard'); // Or render an error page
         }
 
         // Insert the post first
         const insertPostQuery = `
-            INSERT INTO posts (user_id, content, created_at)
-            VALUES (?, ?, NOW())
+            INSERT INTO posts (user_id, content, media_url, created_at)
+            VALUES (?, ?, ?, NOW())
         `;
 
-        const [result] = await db.promise().query(insertPostQuery, [userId, content || null]); // Insert null if content is empty
+        const [result] = await db.promise().query(insertPostQuery, [userId, content || null, mediaUrl]); // Insert null for content if empty
         const postId = result.insertId;
 
-        // If there's a file, insert into the media table
-        if (req.file) {
-            console.log('File received:');
-            console.log('File details:', req.file);
-            const mediaUrl = req.file.path; // Cloudinary URL
-            const mediaType = req.file.resource_type === 'video' ? 'video' : 'image';
-            console.log('Media URL:', mediaUrl);
-            console.log('Media Type:', mediaType);
-
+        // If media was uploaded, insert into the media table
+        if (mediaUrl && finalMediaType) {
             const insertMediaQuery = `
                 INSERT INTO media (user_id, post_id, media_type, media_url, created_at)
                 VALUES (?, ?, ?, ?, NOW())
             `;
-
-            await db.promise().query(insertMediaQuery, [userId, postId, mediaType, mediaUrl]);
+            await db.promise().query(insertMediaQuery, [userId, postId, finalMediaType, mediaUrl]);
         }
 
         res.redirect('/dashboard');
