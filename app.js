@@ -512,10 +512,9 @@ app.post('/post/create', upload.single('media'), async (req, res) => {
         res.redirect('/dashboard');
     } catch (error) {
         console.error('Error creating post:', error);
-        res.status(500).json({ 
-            error: 'Failed to create post',
-            message: error.message 
-        });
+        // Use req.flash for error messages to be displayed as toasts
+        req.flash('error_msg', 'Failed to create post: ' + error.message);
+        res.redirect('/dashboard'); // Redirect back to dashboard or a relevant page
     }
 });
 
@@ -554,15 +553,17 @@ app.post('/post/:postId/like', (req, res) => {
             // User already liked, so unlike
             db.query('DELETE FROM likes WHERE user_id = ? AND post_id = ?', [userId, postId], (err) => {
                 if (err) {
+                    console.error('Error unliking post:', err);
                     return res.status(500).json({ error: 'Failed to unlike post' });
                 }
-                // No notification needed for unliking
-                res.json({ liked: false });
+                // No notification needed for unliking in this case, or could add a subtle toast
+                res.json({ liked: false }); // Keep JSON response for frontend JS handling
             });
         } else {
             // User hasn't liked, so like
             db.query('INSERT INTO likes (user_id, post_id) VALUES (?, ?)', [userId, postId], (err) => {
                 if (err) {
+                    console.error('Error liking post:', err);
                     return res.status(500).json({ error: 'Failed to like post' });
                 }
 
@@ -593,12 +594,12 @@ app.post('/post/:postId/like', (req, res) => {
                                     console.error('Error creating like notification:', err);
                                 }
                                 // Still send the like success response even if notification fails
-                res.json({ liked: true });
+                res.json({ liked: true }); // Keep JSON response for frontend JS handling
                             });
                         });
                     } else {
                          // Liker is the post owner, no notification needed
-                         res.json({ liked: true });
+                         res.json({ liked: true }); // Keep JSON response for frontend JS handling
                     }
                 });
             });
@@ -620,6 +621,7 @@ app.post('/post/:postId/comment', (req, res) => {
         [userId, postId, content], 
         (err, result) => {
             if (err) {
+                console.error('Error adding comment:', err);
                 return res.status(500).json({ error: 'Failed to add comment' });
             }
 
@@ -672,15 +674,17 @@ app.post('/post/:postId/save', (req, res) => {
             // User already saved, so unsave
             db.query('DELETE FROM saved_posts WHERE user_id = ? AND post_id = ?', [userId, postId], (err) => {
                 if (err) {
+                    console.error('Error unsaving post:', err);
                     return res.status(500).json({ error: 'Failed to unsave post' });
                 }
-                // No notification needed for unsaving
-                res.json({ saved: false });
+                // No notification needed for unsaving in this case, or could add a subtle toast
+                res.json({ saved: false }); // Keep JSON response for frontend JS handling
             });
         } else {
             // User hasn't saved, so save
             db.query('INSERT INTO saved_posts (user_id, post_id) VALUES (?, ?)', [userId, postId], (err) => {
                 if (err) {
+                     console.error('Error saving post:', err);
                     return res.status(500).json({ error: 'Failed to save post' });
                 }
 
@@ -931,9 +935,14 @@ app.post('/post/:postId/delete', (req, res) => {
         // Delete post (will cascade to likes/comments/saved)
         db.query('DELETE FROM posts WHERE id = ?', [postId], (err) => {
             if (err) {
-                return res.status(500).json({ error: 'Failed to delete post' });
+                console.error('Error deleting post:', err);
+                // Use req.flash for error messages to be displayed as toasts
+                req.flash('error_msg', 'Failed to delete post.');
+                return res.status(500).json({ error: 'Failed to delete post' }); // Keep JSON for frontend handling
             }
-            res.json({ success: true });
+            // Use req.flash for success message
+            req.flash('success_msg', 'Post deleted successfully!');
+            res.json({ success: true }); // Keep JSON for frontend handling
         });
     });
 });
@@ -1072,17 +1081,25 @@ app.post('/user/:userId/follow', (req, res) => {
     // Check if already following
     db.query('SELECT * FROM followers WHERE follower_id = ? AND following_id = ?', [followerId, followedUserId], (err, results) => {
         if (err) {
+            console.error('Database error checking follow status:', err);
+            // Use req.flash for error message
+            req.flash('error_msg', 'Database error checking follow status.');
             return res.status(500).json({ error: 'Database error' });
         }
 
         if (results.length > 0) {
             // Already following
-            return res.status(400).json({ error: 'Already following this user' });
+            // Use req.flash for info/warning message
+            req.flash('error_msg', 'You are already following this user.');
+            return res.status(400).json({ error: 'Already following this user' }); // Keep JSON for frontend handling
         } else {
             // Not following, so follow
             db.query('INSERT INTO followers (follower_id, following_id) VALUES (?, ?)', [followerId, followedUserId], (err) => {
                 if (err) {
-                    return res.status(500).json({ error: 'Failed to follow user' });
+                    console.error('Error following user:', err);
+                    // Use req.flash for error message
+                    req.flash('error_msg', 'Failed to follow user.');
+                    return res.status(500).json({ error: 'Failed to follow user' }); // Keep JSON for frontend handling
                 }
 
                 // Create notification for the followed user
@@ -1120,10 +1137,13 @@ app.post('/user/:userId/unfollow', (req, res) => {
 
     db.query('DELETE FROM followers WHERE follower_id = ? AND following_id = ?', [followerId, followedUserId], (err) => {
         if (err) {
+            console.error('Error unfollowing user:', err);
+            // Use req.flash for error message
+            req.flash('error_msg', 'Failed to unfollow user.');
             return res.status(500).json({ error: 'Failed to unfollow user' });
         }
-        // No notification needed for unfollowing
-        res.json({ success: true, following: false });
+        // No notification needed for unfollowing, or could add a subtle toast
+        res.json({ success: true, following: false }); // Keep JSON for frontend handling
     });
 });
 

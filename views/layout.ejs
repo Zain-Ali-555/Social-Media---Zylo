@@ -6,6 +6,57 @@
     <title><%= typeof title !== 'undefined' ? title : 'Social Media' %></title><link rel="icon" type="image/png" href="/images/logo.png">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        /* Toast Notification Styles */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background-color: #333;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            transform: translateX(100%);
+            min-width: 250px;
+            max-width: 350px;
+            display: flex;
+            align-items: center;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .toast-icon {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+
+        .toast-success {
+            background-color: #28a745;
+        }
+
+        .toast-error {
+            background-color: #dc3545;
+        }
+
+        .toast-info {
+            background-color: #17a2b8;
+        }
+
+    </style>
 </head>
 <body>
     <% if ((typeof user !== 'undefined' && user) || (typeof isAuthenticated !== 'undefined' && isAuthenticated)) { %>
@@ -14,11 +65,15 @@
     
     <main class="container">
         <% if (messages && messages.success && messages.success.length > 0) { %>
-            <div class="alert alert-success"><i class="fas fa-check-circle"></i> <%= messages.success %></div>
+            <div id="flash-success-messages" style="display: none;">
+                <%= JSON.stringify(messages.success) %>
+            </div>
         <% } %>
         
         <% if (messages && messages.error && messages.error.length > 0) { %>
-            <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <%= messages.error %></div>
+            <div id="flash-error-messages" style="display: none;">
+                <%= JSON.stringify(messages.error) %>
+            </div>
         <% } %>
         
         <%- body %>
@@ -27,6 +82,8 @@
     <% if ((typeof user !== 'undefined' && user) || (typeof isAuthenticated !== 'undefined' && isAuthenticated)) { %>
         <%- include('partials/footer') %>
     <% } %>
+    
+    <div class="toast-container"></div>
     
     <script>
         // Theme toggle functionality
@@ -52,6 +109,55 @@
         document.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
+        });
+
+        // Function to show a toast message
+        function showToast(message, type = 'info', duration = 3000) {
+            const container = document.querySelector('.toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.classList.add('toast', `toast-${type}`);
+
+            let iconClass = '';
+            if (type === 'success') iconClass = 'fas fa-check-circle';
+            else if (type === 'error') iconClass = 'fas fa-times-circle';
+            else iconClass = 'fas fa-info-circle';
+
+            toast.innerHTML = `<i class="toast-icon ${iconClass}"></i><span>${message}</span>`;
+
+            container.appendChild(toast);
+
+            // Show the toast
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 10);
+
+            // Hide and remove the toast
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.addEventListener('transitionend', () => toast.remove());
+            }, duration);
+        }
+
+        // Display flash messages on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const successMessagesElement = document.getElementById('flash-success-messages');
+            const errorMessagesElement = document.getElementById('flash-error-messages');
+
+            if (successMessagesElement) {
+                try {
+                    const successMessages = JSON.parse(successMessagesElement.textContent);
+                    successMessages.forEach(msg => showToast(msg, 'success'));
+                } catch (e) { console.error('Error parsing success flash messages:', e); }
+            }
+
+            if (errorMessagesElement) {
+                 try {
+                    const errorMessages = JSON.parse(errorMessagesElement.textContent);
+                    errorMessages.forEach(msg => showToast(msg, 'error'));
+                 } catch (e) { console.error('Error parsing error flash messages:', e); }
+            }
         });
     </script>
 </body>

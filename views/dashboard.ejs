@@ -135,17 +135,21 @@
                 if (data.success) {
                     // Update button text on the clicked button
                     btn.textContent = isCurrentlyFollowing ? 'Follow' : 'Following';
+                     // Show success toast
+                     showToast(isCurrentlyFollowing ? 'User unfollowed.' : 'User followed!', 'success');
 
                     // Optional: Update follower count on the post author's profile page if it's open
                     // This is more complex as it requires finding the element on a different page,
                     // so we won't implement it directly here for simplicity.
 
                 } else {
-                    alert('Operation failed: ' + (data.error || 'Unknown error'));
+                    // Show error toast
+                    showToast('Operation failed: ' + (data.error || 'Unknown error'), 'error');
                 }
             } catch (error) {
                 console.error('Error toggling follow status from post:', error);
-                alert('An error occurred while performing the operation.');
+                // Show error toast
+                showToast('An error occurred while performing the operation.', 'error');
             }
         });
     });
@@ -157,15 +161,29 @@
             try {
                 const response = await fetch(`/post/${postId}/like`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
                 const data = await response.json();
-                const likeCount = btn.querySelector('.like-count');
-                if (data.liked) {
-                    btn.classList.add('liked');
-                    likeCount.textContent = parseInt(likeCount.textContent) + 1;
+                const likeCountElement = btn.querySelector('.like-count');
+
+                if (response.ok) { // Check if the response status is in the 200s
+                    if (data.liked) {
+                        btn.classList.add('liked');
+                        // Update count element if it exists
+                        if(likeCountElement) likeCountElement.textContent = parseInt(likeCountElement.textContent) + 1;
+                    } else {
+                        btn.classList.remove('liked');
+                        // Update count element if it exists
+                        if(likeCountElement) likeCountElement.textContent = Math.max(0, parseInt(likeCountElement.textContent) - 1);
+                    }
                 } else {
-                    btn.classList.remove('liked');
-                    likeCount.textContent = Math.max(0, parseInt(likeCount.textContent) - 1);
+                    // Handle server errors (e.g., 500)
+                     const errorData = data.error || 'Failed to toggle like status.';
+                     console.error('Server error toggling like:', errorData);
+                     showToast('Error: ' + errorData, 'error');
                 }
-            } catch (error) { console.error('Error toggling like:', error); }
+            } catch (error) {
+                console.error('Error toggling like:', error);
+                // Show error toast for network issues or other errors
+                showToast('An error occurred while liking/unliking.', 'error');
+            }
         });
     });
     // Show/hide and load comments
@@ -218,9 +236,14 @@
                 input.value = '';
                 // Update comment count
                 const commentBtn = document.querySelector(`.comment-btn[data-post-id="${postId}"] .comment-count`);
-                commentBtn.textContent = parseInt(commentBtn.textContent) + 1;
+                // Update count element if it exists
+                if(commentBtn) commentBtn.textContent = parseInt(commentBtn.textContent) + 1;
             }
-        } catch (error) { console.error('Error submitting comment:', error); }
+        } catch (error) {
+            console.error('Error submitting comment:', error);
+            // Show error toast
+            showToast('An error occurred while submitting your comment.', 'error');
+        }
     }
     async function deletePost(postId, btn) {
         if (!confirm('Are you sure you want to delete this post?')) return;
@@ -230,9 +253,18 @@
             if (data.success) {
                 // Remove post card from DOM
                 const card = btn.closest('.post-card');
-                card.parentNode.removeChild(card);
+                if(card) card.parentNode.removeChild(card);
+                // Show success toast
+                showToast('Post deleted successfully!', 'success');
+            } else {
+                 // Show error toast
+                 showToast('Failed to delete post.', 'error');
             }
-        } catch (error) { alert('Failed to delete post.'); }
+        } catch (error) {
+            console.error('Error deleting post:', error);
+            // Show error toast
+            showToast('An error occurred while deleting the post.', 'error');
+        }
     }
     async function toggleSave(postId) {
         try {
@@ -240,28 +272,52 @@
             const data = await response.json();
             const saveBtn = document.querySelector(`button[onclick="toggleSave('${postId}')"]`);
             const icon = saveBtn.querySelector('i');
-            if (data.saved) {
-                saveBtn.classList.add('saved');
-                icon.classList.remove('far');
-                icon.classList.add('fas');
-            } else {
-                saveBtn.classList.remove('saved');
-                icon.classList.remove('fas');
-                icon.classList.add('far');
-            }
-        } catch (error) { console.error('Error toggling save:', error); }
+             if (response.ok) { // Check if the response status is in the 200s
+                if (data.saved) {
+                    if(saveBtn) saveBtn.classList.add('saved');
+                    if(icon) {
+                        icon.classList.remove('far');
+                        icon.classList.add('fas');
+                    }
+                     // Show success toast
+                     showToast('Post saved!', 'success', 1500); // Short duration toast
+                } else {
+                     if(saveBtn) saveBtn.classList.remove('saved');
+                     if(icon) {
+                        icon.classList.remove('fas');
+                        icon.classList.add('far');
+                     }
+                     // Show info toast
+                     showToast('Post unsaved.', 'info', 1500); // Short duration toast
+                }
+             } else {
+                 // Handle server errors
+                 const errorData = data.error || 'Failed to toggle save status.';
+                 console.error('Server error toggling save:', errorData);
+                 showToast('Error: ' + errorData, 'error');
+             }
+        } catch (error) {
+            console.error('Error toggling save:', error);
+            // Show error toast
+            showToast('An error occurred while saving/unsaving.', 'error');
+        }
     }
     async function sharePost(postId) {
         try {
             const response = await fetch(`/post/${postId}/share`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
             const data = await response.json();
-            if (data.success) {
+             if (response.ok && data.success) {
                 await navigator.clipboard.writeText(data.shareLink);
-                alert('Share link copied to clipboard!');
-            }
+                 // Show success toast
+                 showToast('Share link copied to clipboard!', 'success');
+             } else {
+                 // Show error toast
+                 showToast('Failed to generate share link.', 'error');
+             }
         } catch (error) {
             console.error('Error sharing post:', error);
-            alert('Failed to generate share link');
+            // Show error toast
+            showToast('An error occurred while sharing the post.', 'error');
         }
     }
     </script>
