@@ -444,6 +444,8 @@ app.get('/dashboard', (req, res) => {
             const unreadCount = notificationResults[0].unread_count;
             const hasNewNotifications = unreadCount > 0;
 
+        console.log('Rendering dashboard with posts data:', JSON.stringify(posts, null, 2));
+
         res.render('dashboard', { 
             title: 'Dashboard',
             posts,
