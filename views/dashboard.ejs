@@ -36,6 +36,7 @@
         
         <div class="posts">
             <% posts.forEach(post => { %>
+                <% console.log('Rendering post:', post.id, 'Media URL:', post.media_url, 'Media Type:', post.media_type); %>
                 <div class="post-card" data-post-id="<%= post.id %>">
                     <div class="post-header-new">
                         <div class="post-user-info">
