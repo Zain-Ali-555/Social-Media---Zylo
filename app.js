@@ -468,13 +468,20 @@ app.post('/post/create', upload.single('media'), async (req, res) => {
         console.log('Post content:', content);
         console.log('User ID:', userId);
 
+        // Check if at least content or a file is provided
+        if (!content && !req.file) {
+            console.log('No content or file provided');
+            req.flash('error_msg', 'Please provide content or upload a file.');
+            return res.redirect('/dashboard'); // Or render an error page
+        }
+
         // Insert the post first
         const insertPostQuery = `
             INSERT INTO posts (user_id, content, created_at)
             VALUES (?, ?, NOW())
         `;
 
-        const [result] = await db.promise().query(insertPostQuery, [userId, content]);
+        const [result] = await db.promise().query(insertPostQuery, [userId, content || null]); // Insert null if content is empty
         const postId = result.insertId;
 
         // If there's a file, insert into the media table
