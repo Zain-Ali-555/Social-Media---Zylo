@@ -461,9 +461,13 @@ app.post('/post/create', upload.single('media'), async (req, res) => {
     }
 
     try {
+        console.log('Received post creation request');
         const { content } = req.body;
         const userId = req.session.user.id;
         
+        console.log('Post content:', content);
+        console.log('User ID:', userId);
+
         // Insert the post first
         const insertPostQuery = `
             INSERT INTO posts (user_id, content, created_at)
@@ -475,8 +479,12 @@ app.post('/post/create', upload.single('media'), async (req, res) => {
 
         // If there's a file, insert into the media table
         if (req.file) {
+            console.log('File received:');
+            console.log('File details:', req.file);
             const mediaUrl = req.file.path; // Cloudinary URL
             const mediaType = req.file.resource_type === 'video' ? 'video' : 'image';
+            console.log('Media URL:', mediaUrl);
+            console.log('Media Type:', mediaType);
 
             const insertMediaQuery = `
                 INSERT INTO media (user_id, post_id, media_type, media_url, created_at)
