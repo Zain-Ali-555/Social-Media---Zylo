@@ -292,7 +292,7 @@ app.get('/', (req, res) => {
     if (req.session.user) {
         res.redirect('/dashboard');
     } else {
-        res.render('login', { title: 'Login' });
+        res.render('login', { title: 'Connect with ultimate social media friends' });
     }
 });
 
