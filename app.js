@@ -490,14 +490,10 @@ app.post('/post/create', upload.single('media'), async (req, res) => {
         if (req.file) {
             console.log('File received:');
             console.log('File details:', req.file);
-            console.log('Resource type:', req.file.resource_type);
-            console.log('Mime type:', req.file.mimetype);
             const mediaUrl = req.file.path; // Cloudinary URL
             const mediaType = req.file.resource_type === 'video' ? 'video' : 'image';
             console.log('Media URL:', mediaUrl);
             console.log('Media Type:', mediaType);
-            console.log('Media Type (lowercase):', mediaType.toLowerCase());
-            console.log('Media Type (trimmed):', mediaType.toLowerCase().trim());
 
             const insertMediaQuery = `
                 INSERT INTO media (user_id, post_id, media_type, media_url, created_at)
@@ -889,11 +885,10 @@ app.get('/saved', (req, res) => {
         return res.redirect('/login');
     }
     const query = `
-        SELECT p.*, u.username, m.media_url, m.media_type
+        SELECT p.*, u.username
         FROM saved_posts sp
         JOIN posts p ON sp.post_id = p.id
         JOIN users u ON p.user_id = u.id
-        LEFT JOIN media m ON p.id = m.post_id
         WHERE sp.user_id = ?
         ORDER BY sp.created_at DESC
     `;
@@ -947,11 +942,9 @@ app.get('/liked', (req, res) => {
         (SELECT COUNT(*) FROM likes WHERE post_id = p.id) as like_count,
         (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comment_count,
         EXISTS(SELECT 1 FROM likes WHERE post_id = p.id AND user_id = ?) as is_liked,
-        EXISTS(SELECT 1 FROM saved_posts WHERE post_id = p.id AND user_id = ?) as is_saved,
-        m.media_url, m.media_type
+        EXISTS(SELECT 1 FROM saved_posts WHERE post_id = p.id AND user_id = ?) as is_saved
         FROM posts p
         JOIN users u ON p.user_id = u.id
-        LEFT JOIN media m ON p.id = m.post_id
         WHERE p.id IN (SELECT post_id FROM likes WHERE user_id = ?)
         ORDER BY p.created_at DESC
     `;
@@ -973,11 +966,9 @@ app.get('/commented', (req, res) => {
         (SELECT COUNT(*) FROM likes WHERE post_id = p.id) as like_count,
         (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comment_count,
         EXISTS(SELECT 1 FROM likes WHERE post_id = p.id AND user_id = ?) as is_liked,
-        EXISTS(SELECT 1 FROM saved_posts WHERE post_id = p.id AND user_id = ?) as is_saved,
-        m.media_url, m.media_type
+        EXISTS(SELECT 1 FROM saved_posts WHERE post_id = p.id AND user_id = ?) as is_saved
         FROM posts p
         JOIN users u ON p.user_id = u.id
-        LEFT JOIN media m ON p.id = m.post_id
         WHERE p.id IN (SELECT post_id FROM comments WHERE user_id = ?)
         ORDER BY p.created_at DESC
     `;

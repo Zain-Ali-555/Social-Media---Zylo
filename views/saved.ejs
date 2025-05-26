@@ -29,14 +29,7 @@
                             
                             <% if (post.media_url) { %>
                                 <div class="post-media">
-                                    <% if (post.media_type && post.media_type.toLowerCase().trim() === 'video') { %>
-                                        <video class="plyr-js" controls playsinline>
-                                            <source src="<%= post.media_url %>">
-                                            Your browser does not support the video tag.
-                                        </video>
-                                    <% } else { %>
-                                        <img src="<%= post.media_url %>" alt="Post media">
-                                    <% } %>
+                                    <img src="<%= post.media_url %>" alt="Post media">
                                 </div>
                             <% } %>
                         </div>
