@@ -818,80 +818,63 @@
         }
 
         // Media preview functionality
-        if (postMedia && mediaPreview) {
-            // Remove the old single media event listener
-            // postMedia.removeEventListener('change', ...);
-
-            // Handle change for new image input
-            const imageMediaInput = document.getElementById('imageMedia');
-            if(imageMediaInput) {
-                imageMediaInput.addEventListener('change', function(e) {
+        if (mediaPreview) {
+            // Handle change for single media input
+            const postMediaInput = document.getElementById('postMedia');
+             if(postMediaInput) {
+                postMediaInput.addEventListener('change', function(e) {
                     const file = e.target.files[0];
-                    if (file && file.type.startsWith('image/')) {
+                    if (file) {
                         const reader = new FileReader();
                         reader.onload = function(e) {
                             mediaPreview.innerHTML = '';
-                            const img = document.createElement('img');
-                            img.src = e.target.result;
-                            mediaPreview.appendChild(img);
+                            if (file.type.startsWith('image/')) {
+                                const img = document.createElement('img');
+                                img.src = e.target.result;
+                                mediaPreview.appendChild(img);
+                            } else if (file.type.startsWith('video/')) {
+                                const video = document.createElement('video');
+                                video.src = e.target.result;
+                                video.controls = true;
+                                mediaPreview.appendChild(video);
+                            }
                             mediaPreview.classList.add('active');
                         };
                         reader.readAsDataURL(file);
                     } else {
                         mediaPreview.classList.remove('active');
-                        mediaPreview.innerHTML = '';
+                         mediaPreview.innerHTML = '';
                     }
                 });
-            }
+             }
 
-            // Handle change for new video input
-            const videoMediaInput = document.getElementById('videoMedia');
-             if(videoMediaInput) {
-                videoMediaInput.addEventListener('change', function(e) {
-                    const file = e.target.files[0];
-                    if (file && file.type.startsWith('video/')) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            mediaPreview.innerHTML = '';
-                            const video = document.createElement('video');
-                            video.src = e.target.result;
-                            video.controls = true;
-                            mediaPreview.appendChild(video);
-                            mediaPreview.classList.add('active');
-                        };
-                        reader.readAsDataURL(file);
+            // Handle media type dropdown change
+            const mediaTypeSelect = document.getElementById('mediaType');
+            const postMediaSection = document.getElementById('postMediaSection');
+            const postMediaLabel = document.querySelector('label[for="postMedia"]');
+
+             if(mediaTypeSelect && postMediaSection && postMediaLabel) {
+                 mediaTypeSelect.addEventListener('change', function() {
+                    const selectedType = this.value;
+                    if (selectedType === 'image') {
+                         postMediaLabel.textContent = 'Add Image';
+                         postMediaInput.accept = 'image/*';
+                         postMediaSection.style.display = 'block';
+                    } else if (selectedType === 'video') {
+                         postMediaLabel.textContent = 'Add Video';
+                         postMediaInput.accept = 'video/*';
+                         postMediaSection.style.display = 'block';
                     } else {
-                        mediaPreview.classList.remove('active');
-                        mediaPreview.innerHTML = '';
-                    }
-                });
-            }
-
-            // Handle media type radio button change
-            const mediaTypeRadios = document.querySelectorAll('input[name="mediaType"]');
-            const imageUploadSection = document.getElementById('imageUploadSection');
-            const videoUploadSection = document.getElementById('videoUploadSection');
-
-            if(mediaTypeRadios && imageUploadSection && videoUploadSection) {
-                 mediaTypeRadios.forEach(radio => {
-                    radio.addEventListener('change', function() {
-                        if (this.value === 'image') {
-                            imageUploadSection.style.display = 'block';
-                            videoUploadSection.style.display = 'none';
-                             // Clear video input and preview if switching to image
-                             if(videoMediaInput) videoMediaInput.value = '';
-                        } else {
-                            imageUploadSection.style.display = 'none';
-                            videoUploadSection.style.display = 'block';
-                             // Clear image input and preview if switching to video
-                             if(imageMediaInput) imageMediaInput.value = '';
-                        }
-                         // Always clear preview when switching media type
+                         // Hide upload section if 'None' is selected or initial state
+                         postMediaSection.style.display = 'none';
+                         postMediaInput.value = ''; // Clear file input
                          mediaPreview.classList.remove('active');
                          mediaPreview.innerHTML = '';
-                    });
+                    }
                  });
-            }
+                 // Trigger change on load to set initial state
+                 mediaTypeSelect.dispatchEvent(new Event('change'));
+             }
         }
 
         // Theme toggle (already present, keep it here)
@@ -912,23 +895,18 @@
                 </div>
 
                 <div class="file-upload-container">
-                    <label>Choose Media Type:</label>
-                    <div class="media-type-select">
-                        <input type="radio" id="mediaTypeImage" name="mediaType" value="image" checked>
-                        <label for="mediaTypeImage">Image</label>
-                        <input type="radio" id="mediaTypeVideo" name="mediaType" value="video">
-                        <label for="mediaTypeVideo">Video</label>
+                    <label for="mediaType">Choose Media Type:</label>
+                    <select id="mediaType" name="mediaType">
+                        <option value="none">None</option>
+                        <option value="image">Image</option>
+                        <option value="video">Video</option>
+                    </select>
+
+                    <div id="postMediaSection" style="display: none;">
+                         <label for="postMedia">Add Media</label> <%# Label text will be updated by JS %>
+                         <input type="file" id="postMedia" name="media" accept="image/*,video/*"> <%# Accept attribute will be updated by JS %>
                     </div>
 
-                    <div id="imageUploadSection">
-                        <label for="imageMedia">Add Image</label>
-                        <input type="file" id="imageMedia" name="imageMedia" accept="image/*">
-                    </div>
-
-                    <div id="videoUploadSection" style="display: none;">
-                        <label for="videoMedia">Add Video</label>
-                        <input type="file" id="videoMedia" name="videoMedia" accept="video/*">
-                    </div>
                     
                     <div id="mediaPreview" class="media-preview"></div>
                 </div>

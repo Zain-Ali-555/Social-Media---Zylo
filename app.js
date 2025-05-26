@@ -456,8 +456,8 @@ app.get('/dashboard', (req, res) => {
     });
 });
 
-// Update post creation route to handle separate image/video uploads
-app.post('/post/create', upload.fields([{ name: 'imageMedia', maxCount: 1 }, { name: 'videoMedia', maxCount: 1 }]), async (req, res) => {
+// Update post creation route to handle single file upload with dropdown media type
+app.post('/post/create', upload.single('media'), async (req, res) => {
     if (!req.session.user) {
         return res.status(401).json({ error: 'Not authenticated' });
     }
@@ -470,34 +470,23 @@ app.post('/post/create', upload.fields([{ name: 'imageMedia', maxCount: 1 }, { n
         console.log('Post content:', content);
         console.log('User ID:', userId);
         console.log('Selected Media Type:', mediaType);
-        console.log('Received files:', req.files);
-
-        const imageFile = req.files['imageMedia'] ? req.files['imageMedia'][0] : null;
-        const videoFile = req.files['videoMedia'] ? req.files['videoMedia'][0] : null;
+        console.log('Received file:', req.file);
 
         let mediaUrl = null;
         let finalMediaType = null;
 
-        // Determine the media URL and type based on which file was uploaded and selected type
-        if (imageFile && mediaType === 'image') {
-            mediaUrl = imageFile.path;
-            finalMediaType = 'image';
-        } else if (videoFile && mediaType === 'video') {
-            mediaUrl = videoFile.path;
-            finalMediaType = 'video';
-        } else if (imageFile) {
-             // Fallback: if image uploaded but mediaType wasn't 'image', assume image
-            mediaUrl = imageFile.path;
-            finalMediaType = 'image';
-        } else if (videoFile) {
-             // Fallback: if video uploaded but mediaType wasn't 'video', assume video
-            mediaUrl = videoFile.path;
-            finalMediaType = 'video';
+        // Determine the media URL and type based on uploaded file and selected type
+        if (req.file && mediaType !== 'none') {
+            mediaUrl = req.file.path; // Cloudinary URL
+            // Use selected media type, but fallback to Cloudinary's detection if necessary
+            finalMediaType = mediaType === 'image' || mediaType === 'video' ? mediaType : req.file.resource_type;
+             // Ensure finalMediaType is lowercase
+            if (finalMediaType) finalMediaType = finalMediaType.toLowerCase();
         }
 
-        // Check if at least content or a file is provided
+        // Check if at least content or media is provided
         if (!content && !mediaUrl) {
-            console.log('No content or file provided');
+            console.log('No content or media provided');
             req.flash('error_msg', 'Please provide content or upload an image/video.');
             return res.redirect('/dashboard'); // Or render an error page
         }
